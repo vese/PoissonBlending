@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -39,88 +40,63 @@ namespace Poisson_Blending
 
     class Program
     {
-        static Pixel[] Solve(int[,] A, Pixel[] b)
+        static Pixel[] Solve(List<int>[] neighboards, Pixel[] b)
         {
             int n = b.Length;
             Pixel[] X = new Pixel[n];
-            var RX = Solve(A, b.Select(item => item.R).ToArray());
-            var GX = Solve(A, b.Select(item => item.G).ToArray());
-            var BX = Solve(A, b.Select(item => item.B).ToArray());
+            var RX = Solve(neighboards, b.Select(item => (double)item.R).ToArray());
+            var GX = Solve(neighboards, b.Select(item => (double)item.G).ToArray());
+            var BX = Solve(neighboards, b.Select(item => (double)item.B).ToArray());
             for (int i = 0; i < n; i++)
             {
-                X[i] = new Pixel() { R = RX[i], G = GX[i], B = BX[i] };
+                X[i] = new Pixel() { R = (int)RX[i], G = (int)GX[i], B = (int)BX[i] };
             }
             return X;
         }
 
-        static int[] Solve(int[,] A, int[] b)
+        static double[] Solve(List<int>[] neighboards, double[] b)
         {
             int n = b.Length;
-            float[,] doubleA = new float[n, n];
-            float[] doubleb = new float[n];
-            for (int i = 0; i < n; i++)
+            double[] x = new double[n], nextX = new double[n];
+
+            bool errorSuits = false;
+
+            while (!errorSuits)
             {
-                for (int j = 0; j < n; j++)
+                for (int i = 0; i < n; i++)
                 {
-                    doubleA[i, j] = A[i, j];
+                    nextX[i] = b[i];
+                    neighboards[i].ForEach(neighboard => nextX[i] += x[neighboard]);
+                    nextX[i] /= 4;
                 }
-                doubleb[i] = b[i];
+                errorSuits = SuitsError(x, nextX, 0.1);
+                for (int i = 0; i < n; i++)
+                {
+                    x[i] = nextX[i];
+                }
             }
 
-            ForwardGaussian(ref doubleA, ref doubleb);
-            ReverseGaussian(ref doubleA, ref doubleb);
-
-            for (int i = 0; i < n; i++)
-            {
-                b[i] = (int)doubleb[i];
-            }
-            return b;
+            return x;
         }
 
-        static void ForwardGaussian(ref float[,] A, ref float[] b) //Прямой ход
+        static bool SuitsError(double[] x, double[] nextX, double epsilon)
         {
-            int n = b.Length;
-            for (int i = 0; i < n; i++) //Перебор ведущей строки
+            for (int i = 0; i < x.Length; i++)
             {
-                float mainElem = 1 / A[i, i];
-                A[i, i] = 1;
-                b[i] *= mainElem;
-                for (int j = i + 1; j < n; j++) //Деление ведущей строки
+                if (Math.Pow(nextX[i] - x[i], 2) > epsilon)
                 {
-                    A[i, j] *= mainElem;
-                }
-                for (int j = i + 1; j < n; j++) //Обнуление столбца
-                {
-                    float mult = A[j, i];
-                    A[j, i] = 0;
-                    b[j] -= b[i] * mult;
-                    for (int k = i + 1; k < n; k++) // Вычитание из строки
-                    {
-                        A[j, k] -= A[i, k] * mult;
-                    }
+                    return false;
                 }
             }
-        }
-
-        static void ReverseGaussian(ref float[,] A, ref float[] b) //Обратный ход
-        {
-            int n = b.Length;
-            for (int i = n - 1; i > 0; i--) //Перебор ведущей строки
-            {
-                for (int j = i - 1; j >= 0; j--) //Обнуление столбца
-                {
-                    b[j] -= b[i] * A[j, i];
-                    A[j, i] = 0;
-                }
-            }
+            return true;
         }
 
         static void Main(string[] args)
         {
-            using (Bitmap imageA = new Bitmap("A2.jpg"))
+            using (Bitmap imageA = new Bitmap("A4.jpg"))
             {
-                int insertX = 1400, insertY = 1300;
-                using (Bitmap imageB = new Bitmap("B.jpg"))
+                int insertX = 350, insertY = 300;
+                using (Bitmap imageB = new Bitmap("B5.jpg"))
                 {
                     int insertHeight = imageB.Height, insertWidth = imageB.Width;
                     //int insertHeight = 20, insertWidth = 20;
@@ -162,7 +138,11 @@ namespace Poisson_Blending
                         }
                     }
 
-                    int[,] A = new int[(insertHeight - 2) * (insertWidth - 2), (insertHeight - 2) * (insertWidth - 2)];
+                    List<int>[] neighbords = new List<int>[(insertHeight - 2) * (insertWidth - 2)];
+                    for (int i = 0; i < (insertHeight - 2) * (insertWidth - 2); i++)
+                    {
+                        neighbords[i] = new List<int>();
+                    }
                     Pixel[] b = new Pixel[(insertHeight - 2) * (insertWidth - 2)];
                     for (int i = 0; i < (insertHeight - 2) * (insertWidth - 2); i++)
                     {
@@ -175,7 +155,7 @@ namespace Poisson_Blending
                             int index = i * (insertWidth - 2) + j;
                             if (i > 0)
                             {
-                                A[index, (i - 1) * (insertWidth - 2) + j] = -1;
+                                neighbords[index].Add((i - 1) * (insertWidth - 2) + j);
                             }
                             else
                             {
@@ -183,7 +163,7 @@ namespace Poisson_Blending
                             }
                             if (j > 0)
                             {
-                                A[index, i * (insertWidth - 2) + j - 1] = -1;
+                                neighbords[index].Add(i * (insertWidth - 2) + j - 1);
                             }
                             else
                             {
@@ -191,7 +171,7 @@ namespace Poisson_Blending
                             }
                             if (i + 1 < insertHeight - 2)
                             {
-                                A[index, (i + 1) * (insertWidth - 2) + j] = -1;
+                                neighbords[index].Add((i + 1) * (insertWidth - 2) + j);
                             }
                             else
                             {
@@ -199,18 +179,17 @@ namespace Poisson_Blending
                             }
                             if (j + 1 < insertWidth - 2)
                             {
-                                A[index, i * (insertWidth - 2) + j + 1] = -1;
+                                neighbords[index].Add(i * (insertWidth - 2) + j + 1);
                             }
                             else
                             {
                                 b[index] += new Pixel(imageA.GetPixel(insertY + j + 2, insertX + i + 1));
                             }
-                            A[index, index] = 4;
                             b[index] += guidanceFieldProjection[i, j + 1] + guidanceFieldProjection[i + 2, j + 1]
                                 + guidanceFieldProjection[i + 1, j] + guidanceFieldProjection[i + 1, j + 2];
                         }
                     }
-                    var X = Solve(A, b);
+                    var X = Solve(neighbords, b);
                     for (int i = 0; i < insertHeight - 2; i++)
                     {
                         for (int j = 0; j < insertWidth - 2; j++)
