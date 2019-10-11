@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 
 namespace Poisson_Blending
 {
@@ -43,56 +42,61 @@ namespace Poisson_Blending
         static Pixel[] Solve(List<int>[] neighboards, Pixel[] b)
         {
             int n = b.Length;
-            Pixel[] X = new Pixel[n];
-            var RX = Solve(neighboards, b.Select(item => (double)item.R).ToArray());
-            var GX = Solve(neighboards, b.Select(item => (double)item.G).ToArray());
-            var BX = Solve(neighboards, b.Select(item => (double)item.B).ToArray());
+            double[,] x = new double[n, 3], nextX = new double[n, 3];
+            int[,] brgb = new int[n, 3];
             for (int i = 0; i < n; i++)
             {
-                X[i] = new Pixel() { R = (int)RX[i], G = (int)GX[i], B = (int)BX[i] };
+                brgb[i, 0] = b[i].R;
+                brgb[i, 1] = b[i].G;
+                brgb[i, 2] = b[i].B;
             }
-            return X;
-        }
-
-        static double[] Solve(List<int>[] neighboards, double[] b)
-        {
-            int n = b.Length;
-            double[] x = new double[n], nextX = new double[n];
-
             bool errorSuits = false;
 
             while (!errorSuits)
             {
-                for (int i = 0; i < n; i++)
+                for (int k = 0; k < 3; k++)
                 {
-                    nextX[i] = b[i];
-                    neighboards[i].ForEach(neighboard => nextX[i] += x[neighboard]);
-                    nextX[i] /= 4;
+                    for (int i = 0; i < n; i++)
+                    {
+                        nextX[i, k] = brgb[i, k];
+                        neighboards[i].ForEach(neighboard => nextX[i, k] += x[neighboard, k]);
+                        nextX[i, k] /= 4;
+                    }
                 }
-                errorSuits = SuitsError(x, nextX, 0.1);
-                for (int i = 0; i < n; i++)
+                errorSuits = Error(x, nextX) < 1;
+                for (int k = 0; k < 3; k++)
                 {
-                    x[i] = nextX[i];
+                    for (int i = 0; i < n; i++)
+                    {
+                        x[i, k] = nextX[i, k];
+                    }
                 }
             }
 
-            return x;
+            Pixel[] result = new Pixel[n];
+            for (int i = 0; i < n; i++)
+            {
+                result[i] = new Pixel { R = (int)x[i, 0], G = (int)x[i, 1], B = (int)x[i, 2] };
+            }
+            return result;
         }
 
-        static bool SuitsError(double[] x, double[] nextX, double epsilon)
+        static double Error(double[,] x, double[,] nextX)
         {
-            for (int i = 0; i < x.Length; i++)
+            double error = 0;
+            for (int k = 0; k < 3; k++)
             {
-                if (Math.Pow(nextX[i] - x[i], 2) > epsilon)
+                for (int i = 0; i < x.GetLength(0); i++)
                 {
-                    return false;
+                    error += Math.Pow(nextX[i, k] - x[i, k], 2);
                 }
             }
-            return true;
+            return Math.Sqrt(error);
         }
 
         static void Main(string[] args)
         {
+            //jpg png
             using (Bitmap imageA = new Bitmap("A4.jpg"))
             {
                 int insertX = 350, insertY = 300;
@@ -185,8 +189,7 @@ namespace Poisson_Blending
                             {
                                 b[index] += new Pixel(imageA.GetPixel(insertY + j + 2, insertX + i + 1));
                             }
-                            b[index] += guidanceFieldProjection[i, j + 1] + guidanceFieldProjection[i + 2, j + 1]
-                                + guidanceFieldProjection[i + 1, j] + guidanceFieldProjection[i + 1, j + 2];
+                            b[index] += guidanceFieldProjection[i + 1, j + 1];
                         }
                     }
                     var X = Solve(neighbords, b);
