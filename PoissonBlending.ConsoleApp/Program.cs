@@ -8,7 +8,8 @@ namespace PoissonBlending.ConsoleApp
         static void Main(string[] args)
         {
             var solver = new PoissonBlendingSolver((string message) => Console.WriteLine(message));
-            solver.Blend("A.jpg", "C.jpg", 1200, 200);
+            solver.Impose("A.jpg", "B.jpg", 300, 70);
+            solver.ImposeWithoutBlending("A.jpg", "B.jpg", 300, 70, true, "resultWithoutBlending.jpg");
         }
     }
 }

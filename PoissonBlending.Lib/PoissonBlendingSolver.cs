@@ -20,7 +20,29 @@ namespace PoissonBlending.Lib
             this.logProgress = logProgress;
         }
 
-        public Bitmap Blend(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
+        public Bitmap ImposeWithoutBlending(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename)
+        {
+            using var imageA = new Bitmap(baseImageFilename);
+            using var imageB = new Bitmap(imposingImageFilename);
+
+            for (int i = 0; i < imageB.Height; i++)
+            {
+                for (int j = 1; j < imageB.Width; j++)
+                {
+                    imageA.SetPixel(insertX + j, insertY + i, imageB.GetPixel(j, i));
+                }
+            }
+
+            if (saveResultImage)
+            {
+                imageA.Save(resultImageFilename);
+            }
+
+            return new Bitmap(imageA);
+        }
+
+        public Bitmap Impose(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
             bool saveResultImage = true, string resultImageFilename = DefaultResultFilename)
         {
             var watch = Stopwatch.StartNew();
@@ -38,7 +60,7 @@ namespace PoissonBlending.Lib
             watch.Stop();
             LogProcessResult(watch.ElapsedMilliseconds);
 
-            return resultImage;
+            return new Bitmap(resultImage);
         }
 
         #region Private functions
@@ -86,9 +108,9 @@ namespace PoissonBlending.Lib
         /// Решение системы уравнений.
         /// </summary>
         /// <param name="pixels">Массив пикселей.</param>
-        /// <param name="neighboards">Массив списков идентификаторов соседних пикселей.</param>
+        /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        private Pixel[] Solve(Pixel[] pixels, List<int>[] neighboards)
+        private Pixel[] Solve(Pixel[] pixels, List<int>[] neighbors)
         {
             int n = pixels.Length;
             double[,] x = new double[n, 3], nextX = new double[n, 3];
@@ -108,7 +130,7 @@ namespace PoissonBlending.Lib
                     for (int i = 0; i < n; i++)
                     {
                         nextX[i, k] = pixelsRGB[i, k];
-                        neighboards[i].ForEach(neighboard => nextX[i, k] += x[neighboard, k]);
+                        neighbors[i].ForEach(neighboard => nextX[i, k] += x[neighboard, k]);
                         nextX[i, k] /= 4;
                     }
                 }
@@ -160,7 +182,7 @@ namespace PoissonBlending.Lib
         }
 
         /// <summary>
-        /// Создает двумерный массив проекций поля направлений для накладываемого изображения.
+        /// Создает двумерный массив числовых проекций поля направлений для накладываемого изображения.
         /// </summary>
         /// <param name="imageB">Накладываемое изображение.</param>
         /// <returns>Двумерный массив <see cref="Pixel"/> проекций поля направлений.</returns>
@@ -203,7 +225,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertY">Позиция y наложения.</param>
         /// <param name="guidanceFieldProjection">Проекции поля направлений.</param>
         /// <returns>Массив пикселей <see cref="Pixel"/> и массив индексов соседних пикселей.</returns>
-        private static (Pixel[] pixels, List<int>[] neighboards) GetPixelsWithNeighboards(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection)
+        private static (Pixel[] pixels, List<int>[] neighbors) GetPixelsWithNeighboards(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection)
         {
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
             var neighbors = new List<int>[(insertHeight - 2) * (insertWidth - 2)];
