@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PoissonBlending.Lib.Solver;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -11,13 +12,14 @@ namespace PoissonBlending.Lib
     {
         public const string DefaultResultFilename = "result.jpg";
 
-        private LogProgress logProgress;
+        private readonly LogProgress logProgress;
 
-        public double AcceptError { get; set; } = 1;
+        private readonly ISolver solver;
 
         public PoissonBlendingSolver(LogProgress logProgress = null)
         {
             this.logProgress = logProgress;
+            solver = new JacobiSolver(LogSolveProgress);
         }
 
         public Bitmap ImposeWithoutBlending(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
@@ -79,7 +81,7 @@ namespace PoissonBlending.Lib
 
             (var pixels, var neighbors) = GetPixelsWithNeighboards(imageA, imageB, insertX, insertY, guidanceFieldProjection);
 
-            var solvedPixels = Solve(pixels, neighbors);
+            var solvedPixels = solver.Solve(pixels, neighbors);
 
             var resultImagePixels = GetResultImageBorderPixels(imageA, imageB, insertX, insertY);
 
@@ -102,56 +104,6 @@ namespace PoissonBlending.Lib
             }
 
             return imageA;
-        }
-
-        /// <summary>
-        /// Решение системы уравнений.
-        /// </summary>
-        /// <param name="pixels">Массив пикселей.</param>
-        /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
-        /// <returns>Вычисленный массив пикселей.</returns>
-        private Pixel[] Solve(Pixel[] pixels, List<int>[] neighbors)
-        {
-            int n = pixels.Length;
-            double[,] x = new double[n, 3], nextX = new double[n, 3];
-            int[,] pixelsRGB = new int[n, 3];
-            for (int i = 0; i < n; i++)
-            {
-                pixelsRGB[i, 0] = pixels[i].R;
-                pixelsRGB[i, 1] = pixels[i].G;
-                pixelsRGB[i, 2] = pixels[i].B;
-            }
-            bool errorSuits = false;
-            int it = 0;
-            while (!errorSuits)
-            {
-                for (int k = 0; k < 3; k++)
-                {
-                    for (int i = 0; i < n; i++)
-                    {
-                        nextX[i, k] = pixelsRGB[i, k];
-                        neighbors[i].ForEach(neighboard => nextX[i, k] += x[neighboard, k]);
-                        nextX[i, k] /= 4;
-                    }
-                }
-                var error = Error(x, nextX);
-                errorSuits = error < AcceptError;
-                for (int k = 0; k < 3; k++)
-                {
-                    for (int i = 0; i < n; i++)
-                    {
-                        x[i, k] = nextX[i, k];
-                    }
-                }
-                LogSolveProgress(it++, error);
-            }
-
-            Pixel[] result = new Pixel[n];
-            for (int i = 0; i < n; i++)
-            {
-                result[i] = new Pixel { R = (int)x[i, 0], G = (int)x[i, 1], B = (int)x[i, 2] };
-            }
-            return result;
         }
 
         #region Static
@@ -280,25 +232,6 @@ namespace PoissonBlending.Lib
             }
 
             return (pixels, neighbors);
-        }
-
-        /// <summary>
-        /// Оценивает погрешность.
-        /// </summary>
-        /// <param name="x">Предыдущее решение.</param>
-        /// <param name="nextX">Новое решение.</param>
-        /// <returns>Оценка погрешности.</returns>
-        private static double Error(double[,] x, double[,] nextX)
-        {
-            double error = 0;
-            for (int k = 0; k < 3; k++)
-            {
-                for (int i = 0; i < x.GetLength(0); i++)
-                {
-                    error += Math.Pow(nextX[i, k] - x[i, k], 2);
-                }
-            }
-            return Math.Sqrt(error);
         }
 
         #endregion
