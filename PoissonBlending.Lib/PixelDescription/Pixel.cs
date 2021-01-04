@@ -1,9 +1,15 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 
-namespace PoissonBlending.Lib
+namespace PoissonBlending.Lib.PixelDescription
 {
     public class Pixel
     {
+        public static readonly List<string> ColorComponentsNames = new() { nameof(R), nameof(G), nameof(B) };
+
+        public static readonly int ColorComponentsCount = ColorComponentsNames.Count;
+
         public int R { get; set; }
         public int G { get; set; }
         public int B { get; set; }
@@ -20,10 +26,39 @@ namespace PoissonBlending.Lib
             B = color.B;
         }
 
+        public int this[string colorComponentName]
+        {
+            get => colorComponentName switch
+            {
+                nameof(R) => R,
+                nameof(G) => G,
+                nameof(B) => B,
+                _ => throw new ArgumentException($"Unknown color component name {colorComponentName}")
+            };
+            set
+            {
+                switch (colorComponentName)
+                {
+                    case nameof(R):
+                        R = value;
+                        break;
+                    case nameof(G):
+                        G = value;
+                        break;
+                    case nameof(B):
+                        B = value;
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown color component name {colorComponentName}");
+                }
+            }
+        }
+
         public Color ToColor() => Color.FromArgb(
             R > byte.MaxValue ? byte.MaxValue : R < 0 ? 0 : R,
             G > byte.MaxValue ? byte.MaxValue : G < 0 ? 0 : G,
             B > byte.MaxValue ? byte.MaxValue : B < 0 ? 0 : B);
+
 
         public static Pixel operator *(int left, Pixel right) => new Pixel { R = left * right.R, G = left * right.G, B = left * right.B };
 

@@ -1,5 +1,5 @@
-﻿using PoissonBlending.Lib.Solver;
-using System;
+﻿using PoissonBlending.Lib.PixelDescription;
+using PoissonBlending.Lib.Solver;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -10,11 +10,13 @@ namespace PoissonBlending.Lib
 
     public class PoissonBlendingSolver
     {
-        public const string DefaultResultFilename = "result.jpg";
-
         private readonly LogProgress logProgress;
 
         private readonly ISolver solver;
+
+        public const string DefaultResultFilename = "result.jpg";
+
+        public bool ShowIntermediateProgress { get; set; } = false;
 
         public PoissonBlendingSolver(LogProgress logProgress = null)
         {
@@ -177,7 +179,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertY">Позиция y наложения.</param>
         /// <param name="guidanceFieldProjection">Проекции поля направлений.</param>
         /// <returns>Массив пикселей <see cref="Pixel"/> и массив индексов соседних пикселей.</returns>
-        private static (Pixel[] pixels, List<int>[] neighbors) GetPixelsWithNeighboards(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection)
+        private static (PixelArray pixels, List<int>[] neighbors) GetPixelsWithNeighboards(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection)
         {
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
             var neighbors = new List<int>[(insertHeight - 2) * (insertWidth - 2)];
@@ -185,7 +187,7 @@ namespace PoissonBlending.Lib
             {
                 neighbors[i] = new List<int>();
             }
-            var pixels = new Pixel[(insertHeight - 2) * (insertWidth - 2)];
+            var pixels = new PixelArray((insertHeight - 2) * (insertWidth - 2));
             for (int i = 0; i < (insertHeight - 2) * (insertWidth - 2); i++)
             {
                 pixels[i] = new Pixel();
@@ -241,16 +243,24 @@ namespace PoissonBlending.Lib
         /// <summary>
         /// Логирование результатов шага решения.
         /// </summary>
+        /// <param name="colorComponentName">Название цветовой компоненты.</param>
         /// <param name="iteration">Номер шага.</param>
         /// <param name="error">Оценка погрешности.</param>
-        private void LogSolveProgress(int iteration, double error)
+        private void LogSolveProgress(string colorComponentName, int iteration, double error, long? elapsedMs)
         {
             if (logProgress == null)
             {
                 return;
             }
 
-            logProgress($"Iteration: {iteration}; Error: {error}.");
+            if (elapsedMs.HasValue)
+            {
+                logProgress($"Blending finished in {elapsedMs}ms; Color component: {colorComponentName}; Iterations: {iteration}.");
+            }
+            else if (ShowIntermediateProgress)
+            {
+                logProgress($"Color component: {colorComponentName}; Iteration: {iteration}; Error: {error}.");
+            }
         }
 
         /// <summary>
@@ -264,7 +274,7 @@ namespace PoissonBlending.Lib
                 return;
             }
 
-            logProgress($"Blending finished in {elapsedMs} ms.");
+            logProgress($"Blending finished in {elapsedMs}ms.");
         }
 
         #endregion

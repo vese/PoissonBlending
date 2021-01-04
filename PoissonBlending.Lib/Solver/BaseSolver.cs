@@ -1,4 +1,4 @@
-﻿using System;
+﻿using PoissonBlending.Lib.PixelDescription;
 using System.Collections.Generic;
 
 namespace PoissonBlending.Lib.Solver
@@ -15,11 +15,11 @@ namespace PoissonBlending.Lib.Solver
             }
         }
 
-        public abstract Pixel[] Solve(Pixel[] pixels, List<int>[] neighbors);
+        public abstract PixelArray Solve(PixelArray pixels, List<int>[] neighbors);
 
-        protected void ReportProgress(int iteration, double error)
+        protected void ReportProgress(string colorComponentName, int iteration, double error, long? elapsedMs = null)
         {
-            OnProgress?.Invoke(iteration, error);
+            OnProgress?.Invoke(colorComponentName, iteration, error, elapsedMs);
         }
     }
 }

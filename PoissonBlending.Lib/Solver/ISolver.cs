@@ -1,9 +1,9 @@
-﻿using System;
+﻿using PoissonBlending.Lib.PixelDescription;
 using System.Collections.Generic;
 
 namespace PoissonBlending.Lib.Solver
 {
-    public delegate void OnProgressHandler(int iteration, double error);
+    public delegate void OnProgressHandler(string colorComponentName, int iteration, double error, long? elapsedMs);
 
     interface ISolver
     {
@@ -15,6 +15,6 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        Pixel[] Solve(Pixel[] pixels, List<int>[] neighbors);
+        PixelArray Solve(PixelArray pixels, List<int>[] neighbors);
     }
 }

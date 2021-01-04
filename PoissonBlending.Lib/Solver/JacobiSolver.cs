@@ -1,15 +1,52 @@
-﻿using System;
+﻿using PoissonBlending.Lib.PixelDescription;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace PoissonBlending.Lib.Solver
 {
     public class JacobiSolver : BaseSolver
     {
-        //public event EventHandler<ProgressEventArgs> OnProgress;
-
         public double AcceptError { get; set; } = 1;
 
         public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
+
+        private int[] Solve(string colorComponentName, int[] pixels, List<int>[] neighbors)
+        {
+            var watch = Stopwatch.StartNew();
+
+            var n = pixels.Length;
+            var x = new double[n];
+            var nextX = new double[n];
+
+            bool errorSuits = false;
+            int it = 0;
+            while (!errorSuits)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    nextX[i] = pixels[i];
+                    neighbors[i].ForEach(neighboard => nextX[i] += x[neighboard]);
+                    nextX[i] /= 4;
+                }
+
+                var error = Error(x, nextX);
+                errorSuits = error < AcceptError;
+
+                for (int i = 0; i < n; i++)
+                {
+                    x[i] = nextX[i];
+                }
+
+                ReportProgress(colorComponentName, it++, error);
+            }
+
+            watch.Stop();
+            ReportProgress(colorComponentName, it++, 0, watch.ElapsedMilliseconds);
+
+            return x.Select(value => (int)value).ToArray();
+        }
 
         /// <summary>
         /// Решение системы уравнений.
@@ -17,48 +54,15 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        public override Pixel[] Solve(Pixel[] pixels, List<int>[] neighbors)
+        public override PixelArray Solve(PixelArray pixels, List<int>[] neighbors)
         {
-            int n = pixels.Length;
-            double[,] x = new double[n, 3], nextX = new double[n, 3];
-            int[,] pixelsRGB = new int[n, 3];
-            for (int i = 0; i < n; i++)
+            var x = new Dictionary<string, int[]>();
+            var colorComponentsValues = pixels.GetColorComponentsValues();
+            foreach (var colorComponentValues in colorComponentsValues)
             {
-                pixelsRGB[i, 0] = pixels[i].R;
-                pixelsRGB[i, 1] = pixels[i].G;
-                pixelsRGB[i, 2] = pixels[i].B;
+                x.Add(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors));
             }
-            bool errorSuits = false;
-            int it = 0;
-            while (!errorSuits)
-            {
-                for (int k = 0; k < 3; k++)
-                {
-                    for (int i = 0; i < n; i++)
-                    {
-                        nextX[i, k] = pixelsRGB[i, k];
-                        neighbors[i].ForEach(neighboard => nextX[i, k] += x[neighboard, k]);
-                        nextX[i, k] /= 4;
-                    }
-                }
-                var error = Error(x, nextX);
-                errorSuits = error < AcceptError;
-                for (int k = 0; k < 3; k++)
-                {
-                    for (int i = 0; i < n; i++)
-                    {
-                        x[i, k] = nextX[i, k];
-                    }
-                }
-                ReportProgress(it++, error);
-            }
-
-            Pixel[] result = new Pixel[n];
-            for (int i = 0; i < n; i++)
-            {
-                result[i] = new Pixel { R = (int)x[i, 0], G = (int)x[i, 1], B = (int)x[i, 2] };
-            }
-            return result;
+            return new PixelArray(x);
         }
 
         /// <summary>
@@ -67,15 +71,12 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="x">Предыдущее решение.</param>
         /// <param name="nextX">Новое решение.</param>
         /// <returns>Оценка погрешности.</returns>
-        private static double Error(double[,] x, double[,] nextX)
+        private static double Error(double[] x, double[] nextX)
         {
             double error = 0;
-            for (int k = 0; k < 3; k++)
+            for (int i = 0; i < x.GetLength(0); i++)
             {
-                for (int i = 0; i < x.GetLength(0); i++)
-                {
-                    error += Math.Pow(nextX[i, k] - x[i, k], 2);
-                }
+                error += Math.Pow(nextX[i] - x[i], 2);
             }
             return Math.Sqrt(error);
         }
