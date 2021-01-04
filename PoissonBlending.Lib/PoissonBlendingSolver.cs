@@ -49,12 +49,18 @@ namespace PoissonBlending.Lib
         public Bitmap Impose(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
             bool saveResultImage = true, string resultImageFilename = DefaultResultFilename)
         {
+            return Impose<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename);
+        }
+
+        public Bitmap Impose<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
+        {
             var watch = Stopwatch.StartNew();
 
             using var imageA = new Bitmap(baseImageFilename);
             using var imageB = new Bitmap(imposingImageFilename);
 
-            var resultImage = CreateResultBitmap(imageA, imageB, insertX, insertY);
+            var resultImage = CreateResultBitmap<Pixel>(imageA, imageB, insertX, insertY);
 
             if (saveResultImage)
             {
@@ -77,15 +83,15 @@ namespace PoissonBlending.Lib
         /// <param name="insertX">Позиция x наложения.</param>
         /// <param name="insertY">Позиция y наложения.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private Bitmap CreateResultBitmap(Bitmap imageA, Bitmap imageB, int insertX, int insertY)
+        private Bitmap CreateResultBitmap<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY) where Pixel : BasePixel, new()
         {
-            var guidanceFieldProjection = CreateGuidanceFieldProjection(imageB);
+            var guidanceFieldProjection = CreateGuidanceFieldProjection<Pixel>(imageB);
 
             (var pixels, var neighbors) = GetPixelsWithNeighboards(imageA, imageB, insertX, insertY, guidanceFieldProjection);
 
             var solvedPixels = solver.Solve(pixels, neighbors);
 
-            var resultImagePixels = GetResultImageBorderPixels(imageA, imageB, insertX, insertY);
+            var resultImagePixels = GetResultImageBorderPixels<Pixel>(imageA, imageB, insertX, insertY);
 
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
 
@@ -117,20 +123,20 @@ namespace PoissonBlending.Lib
         /// <param name="imageB">Накладываемое изображение.</param>
         /// <param name="insertX">Позиция x наложения.</param>
         /// <param name="insertY">Позиция y наложения.</param>
-        /// <returns>Двумерный массив <see cref="Pixel"/> с заполненными граничными пикселями из базового изображения.</returns>
-        private static Pixel[,] GetResultImageBorderPixels(Bitmap imageA, Bitmap imageB, int insertX, int insertY)
+        /// <returns>Двумерный массив <see cref="BasePixel"/> с заполненными граничными пикселями из базового изображения.</returns>
+        private static Pixel[,] GetResultImageBorderPixels<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY) where Pixel : BasePixel, new()
         {
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
             var resultImagePixels = new Pixel[insertHeight, insertWidth];
             for (int j = 0; j < insertWidth; j++)
             {
-                resultImagePixels[0, j] = new Pixel(imageA.GetPixel(insertX + j, insertY));
-                resultImagePixels[insertHeight - 1, j] = new Pixel(imageA.GetPixel(insertX + j, insertY + insertHeight - 1));
+                resultImagePixels[0, j] = (Pixel)new Pixel().FromColor(imageA.GetPixel(insertX + j, insertY));
+                resultImagePixels[insertHeight - 1, j] = (Pixel)new Pixel().FromColor(imageA.GetPixel(insertX + j, insertY + insertHeight - 1));
             }
             for (int i = 1; i < insertHeight - 1; i++)
             {
-                resultImagePixels[i, 0] = new Pixel(imageA.GetPixel(insertY, insertY + i));
-                resultImagePixels[i, insertWidth - 1] = new Pixel(imageA.GetPixel(insertX + insertWidth - 1, insertY + i));
+                resultImagePixels[i, 0] = (Pixel)new Pixel().FromColor(imageA.GetPixel(insertY, insertY + i));
+                resultImagePixels[i, insertWidth - 1] = (Pixel)new Pixel().FromColor(imageA.GetPixel(insertX + insertWidth - 1, insertY + i));
             }
             return resultImagePixels;
         }
@@ -140,7 +146,7 @@ namespace PoissonBlending.Lib
         /// </summary>
         /// <param name="imageB">Накладываемое изображение.</param>
         /// <returns>Двумерный массив <see cref="Pixel"/> проекций поля направлений.</returns>
-        private static Pixel[,] CreateGuidanceFieldProjection(Bitmap imageB)
+        private static Pixel[,] CreateGuidanceFieldProjection<Pixel>(Bitmap imageB) where Pixel : BasePixel, new()
         {
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
             var guidanceFieldProjection = new Pixel[insertHeight, insertWidth];
@@ -151,19 +157,19 @@ namespace PoissonBlending.Lib
                     guidanceFieldProjection[i, j] = new Pixel();
                     if (i > 0)
                     {
-                        guidanceFieldProjection[i, j] += new Pixel(imageB.GetPixel(j, i)) - new Pixel(imageB.GetPixel(j, i - 1));
+                        guidanceFieldProjection[i, j].Add(new Pixel().FromColor(imageB.GetPixel(j, i)).Minus(new Pixel().FromColor(imageB.GetPixel(j, i - 1))));
                     }
                     if (j > 0)
                     {
-                        guidanceFieldProjection[i, j] += new Pixel(imageB.GetPixel(j, i)) - new Pixel(imageB.GetPixel(j - 1, i));
+                        guidanceFieldProjection[i, j].Add(new Pixel().FromColor(imageB.GetPixel(j, i)).Minus(new Pixel().FromColor(imageB.GetPixel(j - 1, i))));
                     }
                     if (i < insertHeight - 1)
                     {
-                        guidanceFieldProjection[i, j] += new Pixel(imageB.GetPixel(j, i)) - new Pixel(imageB.GetPixel(j, i + 1));
+                        guidanceFieldProjection[i, j].Add(new Pixel().FromColor(imageB.GetPixel(j, i)).Minus(new Pixel().FromColor(imageB.GetPixel(j, i + 1))));
                     }
                     if (j < insertWidth - 1)
                     {
-                        guidanceFieldProjection[i, j] += new Pixel(imageB.GetPixel(j, i)) - new Pixel(imageB.GetPixel(j + 1, i));
+                        guidanceFieldProjection[i, j].Add(new Pixel().FromColor(imageB.GetPixel(j, i)).Minus(new Pixel().FromColor(imageB.GetPixel(j + 1, i))));
                     }
                 }
             }
@@ -179,7 +185,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertY">Позиция y наложения.</param>
         /// <param name="guidanceFieldProjection">Проекции поля направлений.</param>
         /// <returns>Массив пикселей <see cref="Pixel"/> и массив индексов соседних пикселей.</returns>
-        private static (PixelArray pixels, List<int>[] neighbors) GetPixelsWithNeighboards(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection)
+        private static (PixelArray<Pixel> pixels, List<int>[] neighbors) GetPixelsWithNeighboards<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Pixel[,] guidanceFieldProjection) where Pixel : BasePixel, new()
         {
             int insertHeight = imageB.Height, insertWidth = imageB.Width;
             var neighbors = new List<int>[(insertHeight - 2) * (insertWidth - 2)];
@@ -187,7 +193,7 @@ namespace PoissonBlending.Lib
             {
                 neighbors[i] = new List<int>();
             }
-            var pixels = new PixelArray((insertHeight - 2) * (insertWidth - 2));
+            var pixels = new PixelArray<Pixel>((insertHeight - 2) * (insertWidth - 2));
             for (int i = 0; i < (insertHeight - 2) * (insertWidth - 2); i++)
             {
                 pixels[i] = new Pixel();
@@ -203,7 +209,7 @@ namespace PoissonBlending.Lib
                     }
                     else
                     {
-                        pixels[index] += new Pixel(imageA.GetPixel(insertX + j + 1, insertY + i));
+                        pixels[index].Add(new Pixel().FromColor(imageA.GetPixel(insertX + j + 1, insertY + i)));
                     }
                     if (j > 0)
                     {
@@ -211,7 +217,7 @@ namespace PoissonBlending.Lib
                     }
                     else
                     {
-                        pixels[index] += new Pixel(imageA.GetPixel(insertX + j, insertY + i + 1));
+                        pixels[index].Add(new Pixel().FromColor(imageA.GetPixel(insertX + j, insertY + i + 1)));
                     }
                     if (i + 1 < insertHeight - 2)
                     {
@@ -219,7 +225,7 @@ namespace PoissonBlending.Lib
                     }
                     else
                     {
-                        pixels[index] += new Pixel(imageA.GetPixel(insertX + j + 1, insertY + i + 2));
+                        pixels[index].Add(new Pixel().FromColor(imageA.GetPixel(insertX + j + 1, insertY + i + 2)));
                     }
                     if (j + 1 < insertWidth - 2)
                     {
@@ -227,9 +233,9 @@ namespace PoissonBlending.Lib
                     }
                     else
                     {
-                        pixels[index] += new Pixel(imageA.GetPixel(insertX + j + 2, insertY + i + 1));
+                        pixels[index].Add(new Pixel().FromColor(imageA.GetPixel(insertX + j + 2, insertY + i + 1)));
                     }
-                    pixels[index] += guidanceFieldProjection[i + 1, j + 1];
+                    pixels[index].Add(guidanceFieldProjection[i + 1, j + 1]);
                 }
             }
 

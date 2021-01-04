@@ -15,7 +15,7 @@ namespace PoissonBlending.Lib.Solver
             }
         }
 
-        public abstract PixelArray Solve(PixelArray pixels, List<int>[] neighbors);
+        public abstract PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
 
         protected void ReportProgress(string colorComponentName, int iteration, double error, long? elapsedMs = null)
         {

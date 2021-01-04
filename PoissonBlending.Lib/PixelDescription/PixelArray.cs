@@ -2,7 +2,7 @@
 
 namespace PoissonBlending.Lib.PixelDescription
 {
-    public class PixelArray
+    public class PixelArray<Pixel> where Pixel : BasePixel, new()
     {
         public Pixel[] Pixels { get; set; }
 
@@ -41,14 +41,14 @@ namespace PoissonBlending.Lib.PixelDescription
         public Dictionary<string, int[]> GetColorComponentsValues()
         {
             var colorComponentsValues = new Dictionary<string, int[]>();
-            foreach (var colorComponentName in Pixel.ColorComponentsNames)
+            foreach (var colorComponentName in BasePixel.ColorComponentsNames)
             {
                 colorComponentsValues.Add(colorComponentName, new int[Length]);
             }
 
             for (var i = 0; i < Length; i++)
             {
-                foreach (var colorComponentName in Pixel.ColorComponentsNames)
+                foreach (var colorComponentName in BasePixel.ColorComponentsNames)
                 {
                     colorComponentsValues[colorComponentName][i] = Pixels[i][colorComponentName];
                 }

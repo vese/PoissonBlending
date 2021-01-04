@@ -54,7 +54,7 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        public override PixelArray Solve(PixelArray pixels, List<int>[] neighbors)
+        public override PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
         {
             var x = new Dictionary<string, int[]>();
             var colorComponentsValues = pixels.GetColorComponentsValues();
@@ -62,7 +62,7 @@ namespace PoissonBlending.Lib.Solver
             {
                 x.Add(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors));
             }
-            return new PixelArray(x);
+            return new PixelArray<Pixel>(x);
         }
 
         /// <summary>
