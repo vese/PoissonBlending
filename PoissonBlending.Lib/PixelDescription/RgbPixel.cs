@@ -6,9 +6,7 @@ namespace PoissonBlending.Lib.PixelDescription
 {
     public class RgbPixel: BasePixel
     {
-        public static new readonly List<string> ColorComponentsNames = new() { nameof(R), nameof(G), nameof(B) };
-
-        public static new readonly int ColorComponentsCount = ColorComponentsNames.Count;
+        public static readonly List<string> ColorComponentsNames = new() { nameof(R), nameof(G), nameof(B) };
 
         public int R { get; set; }
         public int G { get; set; }
@@ -66,6 +64,8 @@ namespace PoissonBlending.Lib.PixelDescription
             R > byte.MaxValue ? byte.MaxValue : R < 0 ? 0 : R,
             G > byte.MaxValue ? byte.MaxValue : G < 0 ? 0 : G,
             B > byte.MaxValue ? byte.MaxValue : B < 0 ? 0 : B);
+
+        public override List<string> GetColorComponentsNames() => ColorComponentsNames;
 
         public override RgbPixel Multiply(int value)
         {

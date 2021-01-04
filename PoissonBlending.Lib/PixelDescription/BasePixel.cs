@@ -5,15 +5,13 @@ namespace PoissonBlending.Lib.PixelDescription
 {
     public abstract class BasePixel
     {
-        public static readonly List<string> ColorComponentsNames;
-
-        public static readonly int ColorComponentsCount;
-
         public abstract int this[string colorComponentName] { get; set; }
 
         public abstract BasePixel FromColor(Color color);
 
         public abstract Color ToColor();
+
+        public abstract List<string> GetColorComponentsNames();
 
         public abstract BasePixel Multiply(int value);
 

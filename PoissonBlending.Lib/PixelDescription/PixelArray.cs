@@ -40,15 +40,16 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public Dictionary<string, int[]> GetColorComponentsValues()
         {
+            var colorComponentsNames = new Pixel().GetColorComponentsNames();
             var colorComponentsValues = new Dictionary<string, int[]>();
-            foreach (var colorComponentName in BasePixel.ColorComponentsNames)
+            foreach (var colorComponentName in colorComponentsNames)
             {
                 colorComponentsValues.Add(colorComponentName, new int[Length]);
             }
 
             for (var i = 0; i < Length; i++)
             {
-                foreach (var colorComponentName in BasePixel.ColorComponentsNames)
+                foreach (var colorComponentName in colorComponentsNames)
                 {
                     colorComponentsValues[colorComponentName][i] = Pixels[i][colorComponentName];
                 }
