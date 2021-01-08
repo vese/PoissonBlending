@@ -1,4 +1,5 @@
 ﻿using PoissonBlending.Lib;
+using PoissonBlending.Lib.PixelDescription;
 using System;
 
 namespace PoissonBlending.ConsoleApp
@@ -8,8 +9,9 @@ namespace PoissonBlending.ConsoleApp
         static void Main()
         {
             var solver = new PoissonBlendingSolver((string message) => Console.WriteLine(message));
-            solver.Impose("A.jpg", "B.jpg", 300, 70);
-            solver.ImposeWithoutBlending("A.jpg", "B.jpg", 300, 70, true, "resultWithoutBlending.jpg");
+            //solver.Impose("A.jpg", "B.jpg", 300, 70, resultImageFilename: "rgbResult.jpg");
+            solver.Impose<HslPixel>("A.jpg", "B.jpg", 300, 70, resultImageFilename: "hslResult.jpg");
+            solver.ImposeWithoutBlending("A.jpg", "B.jpg", 300, 70, resultImageFilename: "resultWithoutBlending.jpg");
         }
     }
 }

@@ -2,17 +2,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace PoissonBlending.Lib.Solver
 {
     public class JacobiSolver : BaseSolver
     {
-        public double AcceptError { get; set; } = 1;
+        // 1 - rgb
+        // 0.00001 - hsl
+        public double AcceptError { get; set; } = 0.00001;
 
         public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
-        private int[] Solve(string colorComponentName, int[] pixels, List<int>[] neighbors)
+        private double[] Solve(string colorComponentName, double[] pixels, List<int>[] neighbors)
         {
             var watch = Stopwatch.StartNew();
 
@@ -45,7 +46,7 @@ namespace PoissonBlending.Lib.Solver
             watch.Stop();
             ReportProgress(colorComponentName, it++, 0, watch.ElapsedMilliseconds);
 
-            return x.Select(value => (int)value).ToArray();
+            return x;
         }
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace PoissonBlending.Lib.Solver
         /// <returns>Вычисленный массив пикселей.</returns>
         public override PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
         {
-            var x = new Dictionary<string, int[]>();
+            var x = new Dictionary<string, double[]>();
             var colorComponentsValues = pixels.GetColorComponentsValues();
             foreach (var colorComponentValues in colorComponentsValues)
             {

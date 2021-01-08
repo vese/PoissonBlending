@@ -24,7 +24,7 @@ namespace PoissonBlending.Lib.PixelDescription
             B = color.B;
         }
 
-        public override int this[string colorComponentName]
+        public override double this[string colorComponentName]
         {
             get => colorComponentName switch
             {
@@ -38,13 +38,13 @@ namespace PoissonBlending.Lib.PixelDescription
                 switch (colorComponentName)
                 {
                     case nameof(R):
-                        R = value;
+                        R = (int)value;
                         break;
                     case nameof(G):
-                        G = value;
+                        G = (int)value;
                         break;
                     case nameof(B):
-                        B = value;
+                        B = (int)value;
                         break;
                     default:
                         throw new ArgumentException($"Unknown color component name {colorComponentName}");
@@ -60,47 +60,49 @@ namespace PoissonBlending.Lib.PixelDescription
             return this;
         }
 
-        public override Color ToColor() => Color.FromArgb(
-            R > byte.MaxValue ? byte.MaxValue : R < 0 ? 0 : R,
-            G > byte.MaxValue ? byte.MaxValue : G < 0 ? 0 : G,
-            B > byte.MaxValue ? byte.MaxValue : B < 0 ? 0 : B);
+        public override Color ToColor() => Color.FromArgb(GetColorComponentValue(R), GetColorComponentValue(G), GetColorComponentValue(B));
 
         public override List<string> GetColorComponentsNames() => ColorComponentsNames;
 
         public override RgbPixel Multiply(int value)
         {
-            R = value * R;
-            G = value * G;
-            B = value * B;
+            foreach (var colorComponentsName in ColorComponentsNames)
+            {
+                this[colorComponentsName] *= value;
+            }
             return this;
         }
 
         public override RgbPixel Add(BasePixel value)
         {
-            if (value is not RgbPixel)
+            var pixelValue = GetRgbPixel(value);
+            foreach (var colorComponentsName in ColorComponentsNames)
             {
-                throw new ArgumentException($"Wrong argument type: {nameof(BasePixel)}. Expected type {nameof(RgbPixel)}.");
+                this[colorComponentsName] += pixelValue[colorComponentsName];
             }
-
-            var pixelValue = value as RgbPixel;
-            R += pixelValue.R;
-            G += pixelValue.G;
-            B += pixelValue.B;
             return this;
         }
 
         public override RgbPixel Minus(BasePixel value)
+        {
+            var pixelValue = GetRgbPixel(value);
+            foreach (var colorComponentsName in ColorComponentsNames)
+            {
+                this[colorComponentsName] -= pixelValue[colorComponentsName];
+            }
+            return this;
+        }
+
+        private static int GetColorComponentValue(int value) => value > byte.MaxValue ? byte.MaxValue : value < 0 ? 0 : value;
+
+        private static RgbPixel GetRgbPixel(BasePixel value)
         {
             if (value is not RgbPixel)
             {
                 throw new ArgumentException($"Wrong argument type: {nameof(BasePixel)}. Expected type {nameof(RgbPixel)}.");
             }
 
-            var pixelValue = value as RgbPixel;
-            R -= pixelValue.R;
-            G -= pixelValue.G;
-            B -= pixelValue.B;
-            return this;
+            return value as RgbPixel;
         }
     }
 }

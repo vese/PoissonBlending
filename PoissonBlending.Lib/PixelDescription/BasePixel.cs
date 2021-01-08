@@ -5,7 +5,7 @@ namespace PoissonBlending.Lib.PixelDescription
 {
     public abstract class BasePixel
     {
-        public abstract int this[string colorComponentName] { get; set; }
+        public abstract double this[string colorComponentName] { get; set; }
 
         public abstract BasePixel FromColor(Color color);
 

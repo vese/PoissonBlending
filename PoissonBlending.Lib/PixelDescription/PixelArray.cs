@@ -19,7 +19,7 @@ namespace PoissonBlending.Lib.PixelDescription
             Pixels = new Pixel[length];
         }
 
-        public PixelArray(Dictionary<string, int[]> colorComponentsValues)
+        public PixelArray(Dictionary<string, double[]> colorComponentsValues)
         {
             foreach (var colorComponentValues in colorComponentsValues)
             {
@@ -38,13 +38,13 @@ namespace PoissonBlending.Lib.PixelDescription
             }
         }
 
-        public Dictionary<string, int[]> GetColorComponentsValues()
+        public Dictionary<string, double[]> GetColorComponentsValues()
         {
             var colorComponentsNames = new Pixel().GetColorComponentsNames();
-            var colorComponentsValues = new Dictionary<string, int[]>();
+            var colorComponentsValues = new Dictionary<string, double[]>();
             foreach (var colorComponentName in colorComponentsNames)
             {
-                colorComponentsValues.Add(colorComponentName, new int[Length]);
+                colorComponentsValues.Add(colorComponentName, new double[Length]);
             }
 
             for (var i = 0; i < Length; i++)
