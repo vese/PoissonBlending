@@ -6,7 +6,7 @@ namespace PoissonBlending.Lib.PixelDescription
 {
     public class RgbPixel: BasePixel
     {
-        public static readonly List<string> ColorComponentsNames = new() { nameof(R), nameof(G), nameof(B) };
+        private static readonly List<string> ColorComponentsNames = new() { nameof(R), nameof(G), nameof(B) };
 
         public int R { get; set; }
         public int G { get; set; }

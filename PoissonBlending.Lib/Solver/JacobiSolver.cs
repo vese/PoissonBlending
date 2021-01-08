@@ -9,7 +9,8 @@ namespace PoissonBlending.Lib.Solver
     {
         // 1 - rgb
         // 0.00001 - hsl
-        public double AcceptError { get; set; } = 0.00001;
+        // 0.001 - cmy
+        public double AcceptError { get; set; } = 0.001;
 
         public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
