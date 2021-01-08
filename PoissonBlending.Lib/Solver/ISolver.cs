@@ -1,5 +1,6 @@
 ﻿using PoissonBlending.Lib.PixelDescription;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib.Solver
 {
@@ -16,5 +17,13 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
         PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
+
+        /// <summary>
+        /// Решение системы уравнений.
+        /// </summary>
+        /// <param name="pixels">Массив пикселей.</param>
+        /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
+        /// <returns>Вычисленный массив пикселей.</returns>
+        Task<PixelArray<Pixel>> SolveAsync<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
     }
 }

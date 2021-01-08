@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib.Solver
 {
@@ -10,7 +12,8 @@ namespace PoissonBlending.Lib.Solver
         // 1 - rgb
         // 0.00001 - hsl
         // 0.001 - cmy
-        public double AcceptError { get; set; } = 0.001;
+        // 0.001 - cmyk
+        public double AcceptError { get; set; } = 1;
 
         public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
@@ -58,12 +61,29 @@ namespace PoissonBlending.Lib.Solver
         /// <returns>Вычисленный массив пикселей.</returns>
         public override PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
         {
-            var x = new Dictionary<string, double[]>();
             var colorComponentsValues = pixels.GetColorComponentsValues();
-            foreach (var colorComponentValues in colorComponentsValues)
-            {
-                x.Add(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors));
-            }
+            var x = colorComponentsValues.Select(colorComponentValues =>
+                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors))
+            );
+            return new PixelArray<Pixel>(x);
+        }
+
+        /// <summary>
+        /// Решение системы уравнений.
+        /// </summary>
+        /// <param name="pixels">Массив пикселей.</param>
+        /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
+        /// <returns>Вычисленный массив пикселей.</returns>
+        public override async Task<PixelArray<Pixel>> SolveAsync<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
+        {
+            var colorComponentsValues = pixels.GetColorComponentsValues();
+            var tasks = colorComponentsValues.ToList().Select(colorComponentValues =>
+                new Task<KeyValuePair<string, double[]>>(() =>
+                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors))
+                    )
+                ).ToList();
+            tasks.ForEach(task => task.Start());
+            var x = await Task.WhenAll(tasks);
             return new PixelArray<Pixel>(x);
         }
 

@@ -1,5 +1,6 @@
 ﻿using PoissonBlending.Lib.PixelDescription;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib.Solver
 {
@@ -16,6 +17,8 @@ namespace PoissonBlending.Lib.Solver
         }
 
         public abstract PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
+
+        public abstract Task<PixelArray<Pixel>> SolveAsync<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
 
         protected void ReportProgress(string colorComponentName, int iteration, double error, long? elapsedMs = null)
         {

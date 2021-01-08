@@ -3,6 +3,7 @@ using PoissonBlending.Lib.Solver;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib
 {
@@ -47,20 +48,47 @@ namespace PoissonBlending.Lib
         }
 
         public Bitmap Impose(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename)
-        {
-            return Impose<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename);
-        }
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) =>
+            Impose<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename);
+
+        public async Task<Bitmap> ImposeAsync(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) =>
+            await ImposeAsync<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename);
 
         public Bitmap Impose<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
             bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
         {
+            LogStarted(typeof(Pixel).Name, false);
+
             var watch = Stopwatch.StartNew();
 
             using var imageA = new Bitmap(baseImageFilename);
             using var imageB = new Bitmap(imposingImageFilename);
 
             var resultImage = CreateResultBitmap<Pixel>(imageA, imageB, insertX, insertY);
+
+            if (saveResultImage)
+            {
+                resultImage.Save(resultImageFilename);
+            }
+
+            watch.Stop();
+            LogProcessResult(watch.ElapsedMilliseconds);
+
+            return new Bitmap(resultImage);
+        }
+
+        public async Task<Bitmap> ImposeAsync<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
+        {
+            LogStarted(typeof(Pixel).Name, true);
+
+            var watch = Stopwatch.StartNew();
+
+            using var imageA = new Bitmap(baseImageFilename);
+            using var imageB = new Bitmap(imposingImageFilename);
+
+            var resultImage = await CreateResultBitmapAsync<Pixel>(imageA, imageB, insertX, insertY);
 
             if (saveResultImage)
             {
@@ -90,6 +118,45 @@ namespace PoissonBlending.Lib
             (var pixels, var neighbors) = GetPixelsWithNeighboards(imageA, imageB, insertX, insertY, guidanceFieldProjection);
 
             var solvedPixels = solver.Solve(pixels, neighbors);
+
+            var resultImagePixels = GetResultImageBorderPixels<Pixel>(imageA, imageB, insertX, insertY);
+
+            int insertHeight = imageB.Height, insertWidth = imageB.Width;
+
+            for (int i = 0; i < insertHeight - 2; i++)
+            {
+                for (int j = 0; j < insertWidth - 2; j++)
+                {
+                    resultImagePixels[i + 1, j + 1] = solvedPixels[i * (insertWidth - 2) + j];
+                }
+            }
+
+            for (int i = 0; i < insertHeight; i++)
+            {
+                for (int j = 1; j < insertWidth; j++)
+                {
+                    imageA.SetPixel(insertX + j, insertY + i, resultImagePixels[i, j].ToColor());
+                }
+            }
+
+            return imageA;
+        }
+
+        /// <summary>
+        /// Составляет результирующее изображение.
+        /// </summary>
+        /// <param name="imageA">Базовое изображение.</param>
+        /// <param name="imageB">Накладываемое изображение.</param>
+        /// <param name="insertX">Позиция x наложения.</param>
+        /// <param name="insertY">Позиция y наложения.</param>
+        /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
+        private async Task<Bitmap> CreateResultBitmapAsync<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY) where Pixel : BasePixel, new()
+        {
+            var guidanceFieldProjection = CreateGuidanceFieldProjection<Pixel>(imageB);
+
+            (var pixels, var neighbors) = GetPixelsWithNeighboards(imageA, imageB, insertX, insertY, guidanceFieldProjection);
+
+            var solvedPixels = await solver.SolveAsync(pixels, neighbors);
 
             var resultImagePixels = GetResultImageBorderPixels<Pixel>(imageA, imageB, insertX, insertY);
 
@@ -245,6 +312,19 @@ namespace PoissonBlending.Lib
         #endregion
 
         #region Log
+        /// <summary>
+        /// Логирование результата наложения.
+        /// </summary>
+        /// <param name="elapsedMs">Время выполнения в миллисекундах.</param>
+        private void LogStarted(string colorModel, bool isAsync)
+        {
+            if (logProgress == null)
+            {
+                return;
+            }
+
+            logProgress($"{(isAsync ? "Async b" : "B")}lending started for {colorModel} color model.");
+        }
 
         /// <summary>
         /// Логирование результатов шага решения.
@@ -281,6 +361,7 @@ namespace PoissonBlending.Lib
             }
 
             logProgress($"Blending finished in {elapsedMs}ms.");
+            logProgress("");
         }
 
         #endregion

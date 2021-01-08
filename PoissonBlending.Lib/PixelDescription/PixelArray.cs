@@ -19,7 +19,7 @@ namespace PoissonBlending.Lib.PixelDescription
             Pixels = new Pixel[length];
         }
 
-        public PixelArray(Dictionary<string, double[]> colorComponentsValues)
+        public PixelArray(IEnumerable<KeyValuePair<string, double[]>> colorComponentsValues)
         {
             foreach (var colorComponentValues in colorComponentsValues)
             {
