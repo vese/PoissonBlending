@@ -16,7 +16,7 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
+        PixelArray<Pixel> Solve<Pixel>(Mask<Pixel> mask) where Pixel : BasePixel, new();
 
         /// <summary>
         /// Решение системы уравнений.
@@ -24,6 +24,6 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        Task<PixelArray<Pixel>> SolveAsync<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors) where Pixel : BasePixel, new();
+        Task<PixelArray<Pixel>> SolveAsync<Pixel>(Mask<Pixel> mask) where Pixel : BasePixel, new();
     }
 }

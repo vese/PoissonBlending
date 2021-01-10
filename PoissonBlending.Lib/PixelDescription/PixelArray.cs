@@ -17,6 +17,13 @@ namespace PoissonBlending.Lib.PixelDescription
         public PixelArray(int length)
         {
             Pixels = new Pixel[length];
+            for (int i = 0; i < Length; i++)
+            {
+                if (Pixels[i] == null)
+                {
+                    Pixels[i] = new Pixel();
+                }
+            }
         }
 
         public PixelArray(IEnumerable<KeyValuePair<string, double[]>> colorComponentsValues)
