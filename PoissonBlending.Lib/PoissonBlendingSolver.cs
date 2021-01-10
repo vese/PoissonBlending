@@ -198,9 +198,9 @@ namespace PoissonBlending.Lib
                 (var x, var y) = mask.PixelsMap[i];
                 Mask<Pixel>.GetNeighbors(x, y).Where(p => mask.BorderMask[p.y, p.x]).ToList().ForEach(p =>
                 {
-                    if (mask.BorderMask[y, x])
+                    if (mask.BorderMask[p.y, p.x])
                     {
-                        mask.Pixels[i].Add(new Pixel().FromColor(imageA.GetPixel(insertX + x + mask.OffsetX, insertY + y + mask.OffsetY)));
+                        mask.Pixels[i].Add(new Pixel().FromColor(imageA.GetPixel(insertX + p.x + mask.OffsetX, insertY + p.y + mask.OffsetY)));
                     }
                 });
             }

@@ -56,12 +56,13 @@ namespace PoissonBlending.Lib
                 {
                     for (var j = 0; j < Width; j++)
                     {
-                        if (!isEndingBorder && FullMask[i, j] && !inSelectedArea && j < Width - 1 && !FullMask[i, j + 1])
+                        if (!selectedAreaPoints.Any(p => p.x == j && p.y == i) && !isEndingBorder && 
+                            FullMask[i, j] && !inSelectedArea && j < Width - 1 && !FullMask[i, j + 1])
                         {
                             inSelectedArea = true;
                             pointsInSelectedArea.Clear();
                         }
-                        else if (FullMask[i, j] && inSelectedArea)
+                        else if (!selectedAreaPoints.Any(p => p.x == j && p.y == i) && FullMask[i, j] && inSelectedArea)
                         {
                             inSelectedArea = false;
                             pointsInSelectedArea.ForEach(point => BorderlessMask[i, point] = FullMask[i, point] = true);
