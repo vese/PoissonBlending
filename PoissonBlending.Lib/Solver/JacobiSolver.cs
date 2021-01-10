@@ -9,15 +9,9 @@ namespace PoissonBlending.Lib.Solver
 {
     public class JacobiSolver : BaseSolver
     {
-        // 1 - rgb
-        // 0.00001 - hsl
-        // 0.001 - cmy
-        // 0.001 - cmyk
-        public double AcceptError { get; set; } = 1;
-
         public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
-        private double[] Solve(string colorComponentName, double[] pixels, List<int>[] neighbors)
+        private double[] Solve(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError)
         {
             var watch = Stopwatch.StartNew();
 
@@ -37,12 +31,9 @@ namespace PoissonBlending.Lib.Solver
                 }
 
                 var error = Error(x, nextX);
-                errorSuits = error < AcceptError;
+                errorSuits = error < acceptedError;
 
-                for (int i = 0; i < n; i++)
-                {
-                    x[i] = nextX[i];
-                }
+                Array.Copy(nextX, x, n);
 
                 ReportProgress(colorComponentName, it++, error);
             }
@@ -62,8 +53,9 @@ namespace PoissonBlending.Lib.Solver
         public override PixelArray<Pixel> Solve<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
         {
             var colorComponentsValues = pixels.GetColorComponentsValues();
+            var acceptedError = Errors.GetAcceptedError(this, new Pixel());
             var x = colorComponentsValues.Select(colorComponentValues =>
-                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors))
+                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors, acceptedError))
             );
             return new PixelArray<Pixel>(x);
         }
@@ -77,13 +69,14 @@ namespace PoissonBlending.Lib.Solver
         public override async Task<PixelArray<Pixel>> SolveAsync<Pixel>(PixelArray<Pixel> pixels, List<int>[] neighbors)
         {
             var colorComponentsValues = pixels.GetColorComponentsValues();
+            var acceptedError = Errors.GetAcceptedError(this, new Pixel());
             var tasks = colorComponentsValues.ToList().Select(colorComponentValues =>
                 new Task<KeyValuePair<string, double[]>>(() =>
-                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors))
+                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, neighbors, acceptedError))
                     )
                 ).ToList();
             tasks.ForEach(task => task.Start());
-            var x = await Task.WhenAll(tasks);
+            var x = await Task.WhenAll(tasks).ConfigureAwait(false);
             return new PixelArray<Pixel>(x);
         }
 

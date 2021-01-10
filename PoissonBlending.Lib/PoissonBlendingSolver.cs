@@ -53,7 +53,7 @@ namespace PoissonBlending.Lib
 
         public async Task<Bitmap> ImposeAsync(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
             bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) =>
-            await ImposeAsync<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename);
+            await ImposeAsync<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, saveResultImage, resultImageFilename).ConfigureAwait(false);
 
         public Bitmap Impose<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY,
             bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
@@ -88,7 +88,7 @@ namespace PoissonBlending.Lib
             using var imageA = new Bitmap(baseImageFilename);
             using var imageB = new Bitmap(imposingImageFilename);
 
-            var resultImage = await CreateResultBitmapAsync<Pixel>(imageA, imageB, insertX, insertY);
+            var resultImage = await CreateResultBitmapAsync<Pixel>(imageA, imageB, insertX, insertY).ConfigureAwait(false);
 
             if (saveResultImage)
             {
@@ -156,7 +156,7 @@ namespace PoissonBlending.Lib
 
             (var pixels, var neighbors) = GetPixelsWithNeighboards(imageA, imageB, insertX, insertY, guidanceFieldProjection);
 
-            var solvedPixels = await solver.SolveAsync(pixels, neighbors);
+            var solvedPixels = await solver.SolveAsync(pixels, neighbors).ConfigureAwait(false);
 
             var resultImagePixels = GetResultImageBorderPixels<Pixel>(imageA, imageB, insertX, insertY);
 
