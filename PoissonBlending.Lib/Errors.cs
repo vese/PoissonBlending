@@ -11,7 +11,7 @@ namespace PoissonBlending.Lib
         public const double JacobiCmyError = 0.001;
         public const double JacobiCmykError = 0.001;
 
-        public static double GetAcceptedError(ISolver solver, BasePixel colorModel)
+        public static double GetAcceptedError(ISolver solver, IPixel colorModel)
         {
             return (solver, colorModel) switch
             {

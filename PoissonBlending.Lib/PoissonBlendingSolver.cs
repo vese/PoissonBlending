@@ -63,7 +63,7 @@ namespace PoissonBlending.Lib
             await ImposeAsync<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, selectedAreaPoints, saveResultImage, resultImageFilename).ConfigureAwait(false);
 
         public Bitmap Impose<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : IPixel, new()
         {
             LogStarted(typeof(Pixel).Name, false);
 
@@ -88,7 +88,7 @@ namespace PoissonBlending.Lib
         }
 
         public async Task<Bitmap> ImposeAsync<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : BasePixel, new()
+            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename) where Pixel : IPixel, new()
         {
             LogStarted(typeof(Pixel).Name, true);
 
@@ -122,7 +122,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertX">Позиция x наложения.</param>
         /// <param name="insertY">Позиция y наложения.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private Bitmap CreateResultBitmap<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask) where Pixel : BasePixel, new()
+        private Bitmap CreateResultBitmap<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             AddGuidanceFieldProjection(imageB, mask);
 
@@ -147,7 +147,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertX">Позиция x наложения.</param>
         /// <param name="insertY">Позиция y наложения.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private async Task<Bitmap> CreateResultBitmapAsync<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask) where Pixel : BasePixel, new()
+        private async Task<Bitmap> CreateResultBitmapAsync<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             AddGuidanceFieldProjection(imageB, mask);
 
@@ -171,7 +171,7 @@ namespace PoissonBlending.Lib
         /// </summary>
         /// <param name="imageB">Накладываемое изображение.</param>
         /// <returns>Двумерный массив <see cref="Pixel"/> проекций поля направлений.</returns>
-        private static void AddGuidanceFieldProjection<Pixel>(Bitmap imageB, Mask<Pixel> mask) where Pixel : BasePixel, new()
+        private static void AddGuidanceFieldProjection<Pixel>(Bitmap imageB, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             for (var i = 0; i < mask.PixelsMap.Length; i++)
             {
@@ -191,7 +191,7 @@ namespace PoissonBlending.Lib
         /// <param name="insertY">Позиция y наложения.</param>
         /// <param name="guidanceFieldProjection">Проекции поля направлений.</param>
         /// <returns>Массив пикселей <see cref="Pixel"/> и массив индексов соседних пикселей.</returns>
-        private static void AddBorderColors<Pixel>(Bitmap imageA, int insertX, int insertY, Mask<Pixel> mask) where Pixel : BasePixel, new()
+        private static void AddBorderColors<Pixel>(Bitmap imageA, int insertX, int insertY, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             for (var i = 0; i < mask.PixelsMap.Length; i++)
             {

@@ -73,7 +73,7 @@ namespace PoissonBlending.Lib.PixelDescription
             return this;
         }
 
-        public override RgbPixel Add(BasePixel value)
+        public override RgbPixel Add(IPixel value)
         {
             var pixelValue = GetRgbPixel(value);
             foreach (var colorComponentsName in ColorComponentsNames)
@@ -83,7 +83,7 @@ namespace PoissonBlending.Lib.PixelDescription
             return this;
         }
 
-        public override RgbPixel Minus(BasePixel value)
+        public override RgbPixel Minus(IPixel value)
         {
             var pixelValue = GetRgbPixel(value);
             foreach (var colorComponentsName in ColorComponentsNames)
@@ -95,11 +95,11 @@ namespace PoissonBlending.Lib.PixelDescription
 
         private static int GetColorComponentValue(int value) => value > byte.MaxValue ? byte.MaxValue : value < 0 ? 0 : value;
 
-        private static RgbPixel GetRgbPixel(BasePixel value)
+        private static RgbPixel GetRgbPixel(IPixel value)
         {
             if (value is not RgbPixel)
             {
-                throw new ArgumentException($"Wrong argument type: {nameof(BasePixel)}. Expected type {nameof(RgbPixel)}.");
+                throw new ArgumentException($"Wrong argument type: {nameof(IPixel)}. Expected type {nameof(RgbPixel)}.");
             }
 
             return value as RgbPixel;

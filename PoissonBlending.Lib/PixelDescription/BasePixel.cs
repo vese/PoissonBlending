@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace PoissonBlending.Lib.PixelDescription
 {
-    public abstract class BasePixel
+    public abstract class BasePixel: IPixel
     {
         public abstract double this[string colorComponentName] { get; set; }
 
@@ -15,8 +15,8 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public abstract BasePixel Multiply(int value);
 
-        public abstract BasePixel Add(BasePixel value);
+        public abstract BasePixel Add(IPixel value);
 
-        public abstract BasePixel Minus(BasePixel value);
+        public abstract BasePixel Minus(IPixel value);
     }
 }

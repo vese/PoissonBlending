@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PoissonBlending.Lib
 {
-    public class Mask<Pixel> where Pixel : BasePixel, new()//BlendingModel // сделать родительский без generic
+    public class Mask<Pixel> where Pixel : IPixel, new()//BlendingModel // сделать родительский без generic
     {
         public bool[,] BorderMask { get; set; }
 

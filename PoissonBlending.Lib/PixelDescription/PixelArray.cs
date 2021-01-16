@@ -2,7 +2,7 @@
 
 namespace PoissonBlending.Lib.PixelDescription
 {
-    public class PixelArray<Pixel> where Pixel : BasePixel, new()
+    public class PixelArray<Pixel> where Pixel : IPixel, new()
     {
         public Pixel[] Pixels { get; set; }
 
