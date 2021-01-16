@@ -82,7 +82,7 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public override HslPixel Add(IPixel value)
         {
-            var pixelValue = GetHslPixel(value);
+            var pixelValue = GetPixel<HslPixel>(value);
             foreach (var colorComponentsName in ColorComponentsNames)
             {
                 this[colorComponentsName] += pixelValue[colorComponentsName];
@@ -92,7 +92,7 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public override HslPixel Minus(IPixel value)
         {
-            var pixelValue = GetHslPixel(value);
+            var pixelValue = GetPixel<HslPixel>(value);
             foreach (var colorComponentsName in ColorComponentsNames)
             {
                 this[colorComponentsName] -= pixelValue[colorComponentsName];
@@ -101,15 +101,5 @@ namespace PoissonBlending.Lib.PixelDescription
         }
 
         private static double GetColorComponentValue(double value) => value > 1 ? 1 : value < 0 ? 0 : value;
-
-        private static HslPixel GetHslPixel(IPixel value)
-        {
-            if (value is not HslPixel)
-            {
-                throw new ArgumentException($"Wrong argument type: {nameof(IPixel)}. Expected type {nameof(HslPixel)}.");
-            }
-
-            return value as HslPixel;
-        }
     }
 }

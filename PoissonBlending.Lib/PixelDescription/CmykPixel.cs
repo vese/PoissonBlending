@@ -89,7 +89,7 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public override CmykPixel Add(IPixel value)
         {
-            var pixelValue = GetCmykPixel(value);
+            var pixelValue = GetPixel<CmykPixel>(value);
             foreach (var colorComponentsName in ColorComponentsNames)
             {
                 this[colorComponentsName] += pixelValue[colorComponentsName];
@@ -99,7 +99,7 @@ namespace PoissonBlending.Lib.PixelDescription
 
         public override CmykPixel Minus(IPixel value)
         {
-            var pixelValue = GetCmykPixel(value);
+            var pixelValue = GetPixel<CmykPixel>(value);
             foreach (var colorComponentsName in ColorComponentsNames)
             {
                 this[colorComponentsName] -= pixelValue[colorComponentsName];
@@ -108,15 +108,5 @@ namespace PoissonBlending.Lib.PixelDescription
         }
 
         private static double GetColorComponentValue(double value) => value > 1 ? 1 : value < 0 ? 0 : value;
-
-        private static CmykPixel GetCmykPixel(IPixel value)
-        {
-            if (value is not CmykPixel)
-            {
-                throw new ArgumentException($"Wrong argument type: {nameof(IPixel)}. Expected type {nameof(CmykPixel)}.");
-            }
-
-            return value as CmykPixel;
-        }
     }
 }

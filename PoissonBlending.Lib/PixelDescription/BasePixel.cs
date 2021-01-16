@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace PoissonBlending.Lib.PixelDescription
@@ -18,5 +19,15 @@ namespace PoissonBlending.Lib.PixelDescription
         public abstract BasePixel Add(IPixel value);
 
         public abstract BasePixel Minus(IPixel value);
+
+        protected static Pixel GetPixel<Pixel>(IPixel value) where Pixel: BasePixel
+        {
+            if (value is not Pixel)
+            {
+                throw new ArgumentException($"Wrong argument type: {nameof(IPixel)}. Expected type {nameof(Pixel)}.");
+            }
+
+            return value as Pixel;
+        }
     }
 }
