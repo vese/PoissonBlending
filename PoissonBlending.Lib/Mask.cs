@@ -41,46 +41,51 @@ namespace PoissonBlending.Lib
                 FullMask = new bool[Height, Width];
                 BorderlessMask = new bool[Height, Width];
 
+                var startBorderMask = new bool[Height, Width];
+                var endBorderMask = new bool[Height, Width];
+
                 for (var i = 0; i < selectedAreaPoints.Length; i++)
                 {
-                    var prevPoint = i == 0 ? selectedAreaPoints[^1] : selectedAreaPoints[i - 1];
-                    var point = selectedAreaPoints[i];
-                    var points = GetBresenhamLine(prevPoint, point);
-                    points.ForEach(point => FullMask[point.y - OffsetY, point.x - OffsetX] = BorderMask[point.y - OffsetY, point.x - OffsetX] = true);
+                    var startPoint = i == 0 ? selectedAreaPoints[^1] : selectedAreaPoints[i - 1];
+                    var endPoint = selectedAreaPoints[i];
+                    var points = GetBresenhamLine(startPoint, endPoint);
+                    var isStartBorder = endPoint.y < startPoint.y;
+                    points.ForEach(point =>
+                    {
+                        FullMask[point.y - OffsetY, point.x - OffsetX] = BorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                        if (isStartBorder /*&& !point.Equals(endPoint)*/)
+                        {
+                            startBorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                        }
+                        else
+                        {
+                            endBorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                        }
+                    });
                 }
 
                 var inSelectedArea = false;
-                var isEndingBorder = false;
+                //var isEndingBorder = false;
                 var pointsInSelectedArea = new List<int>();
                 for (var i = 0; i < Height; i++)
                 {
                     for (var j = 0; j < Width; j++)
                     {
-                        if (!selectedAreaPoints.Any(p => p.x == j && p.y == i) && !isEndingBorder && 
-                            FullMask[i, j] && !inSelectedArea && j < Width - 1 && !FullMask[i, j + 1])
+                        if (startBorderMask[i, j] && !endBorderMask[i, j])
                         {
                             inSelectedArea = true;
                             pointsInSelectedArea.Clear();
                         }
-                        else if (!selectedAreaPoints.Any(p => p.x == j && p.y == i) && FullMask[i, j] && inSelectedArea)
+                        else if (endBorderMask[i, j] && inSelectedArea && !startBorderMask[i, j])
                         {
                             inSelectedArea = false;
                             pointsInSelectedArea.ForEach(point => BorderlessMask[i, point] = FullMask[i, point] = true);
-                            if (j < Width - 1 && FullMask[i, j + 1])
-                            {
-                                isEndingBorder = true;
-                            }
                         }
                         else if (inSelectedArea)
                         {
                             pointsInSelectedArea.Add(j);
                         }
-                        else
-                        {
-                            isEndingBorder = false;
-                        }
                     }
-                    isEndingBorder = false;
                     inSelectedArea = false;
                 }
             }
