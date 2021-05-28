@@ -9,20 +9,41 @@ namespace PoissonBlending.ConsoleApp
     {
         static async Task Main()
         {
-            var solver = new PoissonBlendingSolver((string message) => Console.WriteLine(message))
+            PoissonBlendingSolver.ImposeWithoutBlending(new ImposeWithoutBlendingOptions()
             {
-                ShowIntermediateProgress = true
-            };
-            var points = new Point[] 
+                BaseImageFilename = "A.jpg",
+                ImposingImageFilename = "B.jpg",
+                InsertPosition = new Point(300, 70),
+                ResultImageFilename = "rgbResultAsync points.jpg"
+            });
+
+            await PoissonBlendingSolver.ImposeAsync(new ImposeOptions()
             {
-                new Point(0, 0), 
-                new Point(50, 20), 
-                new Point(70, 30), 
+                BaseImageFilename = "A.jpg",
+                ImposingImageFilename = "B.jpg",
+                InsertPosition = new Point(300, 70),
+                ResultImageFilename = "rgbResultAsync points.jpg",
+                LogProgressDelegate = (string message) => Console.WriteLine(message),
+                ShowIntermediateProgress = false
+            });
+
+
+
+
+            //var solver = new PoissonBlendingSolver((string message) => Console.WriteLine(message))
+            //{
+            //    ShowIntermediateProgress = true
+            //};
+            var points = new Point[]
+            {
+                new Point(0, 0),
+                new Point(50, 20),
+                new Point(70, 30),
                 new Point(85, 1), // 2 пика
-                new Point(100, 31), 
-                new Point(149, 41), 
-                new Point(149, 91), 
-                new Point(0, 91) 
+                new Point(100, 31),
+                new Point(149, 41),
+                new Point(149, 91),
+                new Point(0, 91)
             };
             //await solver.ImposeAsync("A.jpg", "B.jpg", 300, 70, points, resultImageFilename: "rgbResultAsync points.jpg");
             //solver.Impose("A.jpg", "B.jpg", 300, 70, points, resultImageFilename: "rgbResult points.jpg");
@@ -95,8 +116,8 @@ namespace PoissonBlending.ConsoleApp
                 new Point(8, 90),
                 new Point(8, 30),
             };
-            await solver.ImposeAsync("A8.png", "B8.jpg", 65, 90, points3, resultImageFilename: "near 1.jpg");
-            await solver.ImposeAsync("A8.png", "B8.jpg", 65, 90, points3, resultImageFilename: "near 2.jpg", guidanceFieldType: GuidanceFieldType.Mixed);
+            //await solver.ImposeAsync("A8.png", "B8.jpg", 65, 90, points3, resultImageFilename: "near 1.jpg");
+            //await solver.ImposeAsync("A8.png", "B8.jpg", 65, 90, points3, resultImageFilename: "near 2.jpg", guidanceFieldType: GuidanceFieldType.Mixed);
         }
     }
 }

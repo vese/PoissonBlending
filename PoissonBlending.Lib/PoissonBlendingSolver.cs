@@ -9,32 +9,18 @@ using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib
 {
-    public delegate void LogProgress(string message);
+    public delegate void LogProgressDelegate(string message);
 
-    public class PoissonBlendingSolver
+    public static class PoissonBlendingSolver
     {
-        private readonly LogProgress logProgress;
+        public static readonly string DefaultResultFilename = "result.jpg";
 
-        private readonly ISolver solver;
-
-        public const string DefaultResultFilename = "result.jpg";
-
-        public bool ShowIntermediateProgress { get; set; } = false;
-
-        public PoissonBlendingSolver(LogProgress logProgress = null)
+        public static Bitmap ImposeWithoutBlending(ImposeWithoutBlendingOptions options)
         {
-            this.logProgress = logProgress;
-            solver = new JacobiSolver(LogSolveProgress);
-        }
+            using var imageA = new Bitmap(options.BaseImageFilename);
+            using var imageB = new Bitmap(options.ImposingImageFilename);
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Do not make static to call it similar to Impose method")]
-        public Bitmap ImposeWithoutBlending(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename)
-        {
-            using var imageA = new Bitmap(baseImageFilename);
-            using var imageB = new Bitmap(imposingImageFilename);
-
-            var mask = new Mask<RgbPixel>(selectedAreaPoints, imageB.Width, imageB.Height);
+            var mask = new Mask<RgbPixel>(options.SelectedAreaPoints, imageB.Width, imageB.Height);
 
             for (var i = 0; i < mask.Height; i++)
             {
@@ -44,99 +30,91 @@ namespace PoissonBlending.Lib
                     {
                         var x = j + mask.OffsetX;
                         var y = i + mask.OffsetY;
-                        imageA.SetPixel(insertX + x, insertY + y, imageB.GetPixel(x, y));
+                        imageA.SetPixel(options.InsertPosition.x + x, options.InsertPosition.y + y, imageB.GetPixel(x, y));
                     }
                 }
             }
 
-            if (saveResultImage)
+            if (options.SaveResultImage)
             {
-                imageA.Save(resultImageFilename);
+                imageA.Save(options.ResultImageFilename);
             }
 
             return new Bitmap(imageA);
         }
 
-        public Bitmap Impose(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename, GuidanceFieldType guidanceFieldType = GuidanceFieldType.Normal) =>
-            Impose<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, selectedAreaPoints, saveResultImage, resultImageFilename, guidanceFieldType);
+        public static Bitmap Impose(ImposeOptions options) => Impose<RgbPixel>(options);
 
-        public async Task<Bitmap> ImposeAsync(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename, GuidanceFieldType guidanceFieldType = GuidanceFieldType.Normal) =>
-            await ImposeAsync<RgbPixel>(baseImageFilename, imposingImageFilename, insertX, insertY, selectedAreaPoints, saveResultImage, resultImageFilename, guidanceFieldType).ConfigureAwait(false);
+        public static async Task<Bitmap> ImposeAsync(ImposeOptions options) => await ImposeAsync<RgbPixel>(options).ConfigureAwait(false);
 
-        public Bitmap Impose<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename, GuidanceFieldType guidanceFieldType = GuidanceFieldType.Normal) where Pixel : IPixel, new()
+        public static Bitmap Impose<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
         {
-            LogStarted(typeof(Pixel).Name, false);
+            options.GetLogService().LogStarted(typeof(Pixel).Name, false);
 
             var watch = Stopwatch.StartNew();
 
-            using var imageA = new Bitmap(baseImageFilename);
-            using var imageB = new Bitmap(imposingImageFilename);
+            using var imageA = new Bitmap(options.BaseImageFilename);
+            using var imageB = new Bitmap(options.ImposingImageFilename);
 
-            var mask = new Mask<Pixel>(selectedAreaPoints, imageB.Width, imageB.Height);
+            var mask = new Mask<Pixel>(options.SelectedAreaPoints, imageB.Width, imageB.Height);
 
-            var resultImage = CreateResultBitmap(imageA, imageB, insertX, insertY, mask, guidanceFieldType);
+            var resultImage = CreateResultBitmap(options, imageA, imageB, mask);
 
-            if (saveResultImage)
+            if (options.SaveResultImage)
             {
-                resultImage.Save(resultImageFilename);
+                resultImage.Save(options.ResultImageFilename);
             }
 
             watch.Stop();
-            LogProcessResult(watch.ElapsedMilliseconds);
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
 
             return new Bitmap(resultImage);
         }
 
-        public async Task<Bitmap> ImposeAsync<Pixel>(string baseImageFilename, string imposingImageFilename, int insertX, int insertY, Point[] selectedAreaPoints = default,
-            bool saveResultImage = true, string resultImageFilename = DefaultResultFilename, GuidanceFieldType guidanceFieldType = GuidanceFieldType.Normal) where Pixel : IPixel, new()
+        public static async Task<Bitmap> ImposeAsync<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
         {
-            LogStarted(typeof(Pixel).Name, true);
+            options.GetLogService().LogStarted(typeof(Pixel).Name, true);
 
             var watch = Stopwatch.StartNew();
 
-            using var imageA = new Bitmap(baseImageFilename);
-            using var imageB = new Bitmap(imposingImageFilename);
+            using var imageA = new Bitmap(options.BaseImageFilename);
+            using var imageB = new Bitmap(options.ImposingImageFilename);
 
-            var mask = new Mask<Pixel>(selectedAreaPoints, imageB.Width, imageB.Height);
+            var mask = new Mask<Pixel>(options.SelectedAreaPoints, imageB.Width, imageB.Height);
 
-            var resultImage = await CreateResultBitmapAsync(imageA, imageB, insertX, insertY, mask, guidanceFieldType).ConfigureAwait(false);
+            var resultImage = await CreateResultBitmapAsync(options, imageA, imageB, mask).ConfigureAwait(false);
 
-            if (saveResultImage)
+            if (options.SaveResultImage)
             {
-                resultImage.Save(resultImageFilename);
+                resultImage.Save(options.ResultImageFilename);
             }
 
             watch.Stop();
-            LogProcessResult(watch.ElapsedMilliseconds);
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
 
             return new Bitmap(resultImage);
         }
-
-        #region Private functions
 
         /// <summary>
         /// Составляет результирующее изображение.
         /// </summary>
+        /// <param name="options">Параметры наложения.</param>
         /// <param name="imageA">Базовое изображение.</param>
         /// <param name="imageB">Накладываемое изображение.</param>
-        /// <param name="insertX">Позиция x наложения.</param>
-        /// <param name="insertY">Позиция y наложения.</param>
+        /// <param name="mask">Маска изображений.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private Bitmap CreateResultBitmap<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask, GuidanceFieldType guidanceFieldType) where Pixel : IPixel, new()
+        private static Bitmap CreateResultBitmap<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
-            AddGuidanceFieldProjection(imageA, imageB, mask, guidanceFieldType);
+            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
 
-            AddBorderColors(imageA, insertX, insertY, mask);
+            AddBorderColors(imageA, options.InsertPosition.x, options.InsertPosition.y, mask);
 
-            var solvedPixels = solver.Solve(mask);
+            var solvedPixels = options.GetSolver().Solve(mask);
 
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                imageA.SetPixel(insertX + x + mask.OffsetX, insertY + y + mask.OffsetY, solvedPixels[i].ToColor());
+                imageA.SetPixel(options.InsertPosition.x + x + mask.OffsetX, options.InsertPosition.y + y + mask.OffsetY, solvedPixels[i].ToColor());
             }
 
             return imageA;
@@ -145,39 +123,37 @@ namespace PoissonBlending.Lib
         /// <summary>
         /// Составляет результирующее изображение.
         /// </summary>
+        /// <param name="options">Параметры наложения.</param>
         /// <param name="imageA">Базовое изображение.</param>
         /// <param name="imageB">Накладываемое изображение.</param>
-        /// <param name="insertX">Позиция x наложения.</param>
-        /// <param name="insertY">Позиция y наложения.</param>
+        /// <param name="mask">Маска изображений.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private async Task<Bitmap> CreateResultBitmapAsync<Pixel>(Bitmap imageA, Bitmap imageB, int insertX, int insertY, Mask<Pixel> mask, GuidanceFieldType guidanceFieldType) where Pixel : IPixel, new()
+        private static async Task<Bitmap> CreateResultBitmapAsync<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
-            AddGuidanceFieldProjection(imageA, imageB, mask, guidanceFieldType);
+            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
 
-            AddBorderColors(imageA, insertX, insertY, mask);
+            AddBorderColors(imageA, options.InsertPosition.x, options.InsertPosition.y, mask);
 
-            var solvedPixels = await solver.SolveAsync(mask).ConfigureAwait(false);
+            var solvedPixels = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
 
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                imageA.SetPixel(insertX + x + mask.OffsetX, insertY + y + mask.OffsetY, solvedPixels[i].ToColor());
+                imageA.SetPixel(options.InsertPosition.x + x + mask.OffsetX, options.InsertPosition.y + y + mask.OffsetY, solvedPixels[i].ToColor());
             }
 
             return imageA;
         }
-
-        #region Static
 
         /// <summary>
         /// Создает двумерный массив числовых проекций поля направлений для накладываемого изображения.
         /// </summary>
+        /// <param name="imageA">Базовое изображение.</param>
         /// <param name="imageB">Накладываемое изображение.</param>
-        /// <returns>Двумерный массив <see cref="Pixel"/> проекций поля направлений.</returns>
+        /// <param name="mask">Маска изображений.</param>
+        /// <param name="guidanceFieldType">Тип направляющего поля.</param>
         private static void AddGuidanceFieldProjection<Pixel>(Bitmap imageA, Bitmap imageB, Mask<Pixel> mask, GuidanceFieldType guidanceFieldType) where Pixel : IPixel, new()
         {
-            // TODO: use IGuidanceFieldProjectionSolver instead of enum
-            var list = new List<int>();
             for (var i = 0; i < mask.PixelsMap.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
@@ -220,11 +196,9 @@ namespace PoissonBlending.Lib
         /// Составляет набор накладываемых пикселей и соседей. К пикселям прибавляется значение проекции градиента.  
         /// </summary>
         /// <param name="imageA">Базовое изображение.</param>
-        /// <param name="imageB">Накладываемое изображение.</param>
         /// <param name="insertX">Позиция x наложения.</param>
         /// <param name="insertY">Позиция y наложения.</param>
-        /// <param name="guidanceFieldProjection">Проекции поля направлений.</param>
-        /// <returns>Массив пикселей <see cref="Pixel"/> и массив индексов соседних пикселей.</returns>
+        /// <param name="mask">Маска изображений.</param>
         private static void AddBorderColors<Pixel>(Bitmap imageA, int insertX, int insertY, Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             for (var i = 0; i < mask.PixelsMap.Length; i++)
@@ -239,64 +213,5 @@ namespace PoissonBlending.Lib
                 });
             }
         }
-
-        #endregion
-
-        #region Log
-        /// <summary>
-        /// Логирование результата наложения.
-        /// </summary>
-        /// <param name="elapsedMs">Время выполнения в миллисекундах.</param>
-        private void LogStarted(string colorModel, bool isAsync)
-        {
-            if (logProgress == null)
-            {
-                return;
-            }
-
-            logProgress($"{(isAsync ? "Async b" : "B")}lending started for {colorModel} color model.");
-        }
-
-        /// <summary>
-        /// Логирование результатов шага решения.
-        /// </summary>
-        /// <param name="colorComponentName">Название цветовой компоненты.</param>
-        /// <param name="iteration">Номер шага.</param>
-        /// <param name="error">Оценка погрешности.</param>
-        private void LogSolveProgress(string colorComponentName, int iteration, double error, long? elapsedMs)
-        {
-            if (logProgress == null)
-            {
-                return;
-            }
-
-            if (elapsedMs.HasValue)
-            {
-                logProgress($"Blending finished in {elapsedMs}ms; Color component: {colorComponentName}; Iterations: {iteration}.");
-            }
-            else if (ShowIntermediateProgress)
-            {
-                logProgress($"Color component: {colorComponentName}; Iteration: {iteration}; Error: {error}.");
-            }
-        }
-
-        /// <summary>
-        /// Логирование результата наложения.
-        /// </summary>
-        /// <param name="elapsedMs">Время выполнения в миллисекундах.</param>
-        private void LogProcessResult(long elapsedMs)
-        {
-            if (logProgress == null)
-            {
-                return;
-            }
-
-            logProgress($"Blending finished in {elapsedMs}ms.");
-            logProgress("");
-        }
-
-        #endregion
-
-        #endregion
     }
 }

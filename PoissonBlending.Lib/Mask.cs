@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PoissonBlending.Lib
 {
-    public class Mask<Pixel> where Pixel : IPixel, new()//BlendingModel // сделать родительский без generic
+    public class Mask<Pixel> where Pixel : IPixel, new()
     {
         public bool[,] BorderMask { get; set; }
 
@@ -53,7 +53,7 @@ namespace PoissonBlending.Lib
                     points.ForEach(point =>
                     {
                         FullMask[point.y - OffsetY, point.x - OffsetX] = BorderMask[point.y - OffsetY, point.x - OffsetX] = true;
-                        if (isStartBorder /*&& !point.Equals(endPoint)*/)
+                        if (isStartBorder)
                         {
                             startBorderMask[point.y - OffsetY, point.x - OffsetX] = true;
                         }
@@ -65,7 +65,6 @@ namespace PoissonBlending.Lib
                 }
 
                 var inSelectedArea = false;
-                //var isEndingBorder = false;
                 var pointsInSelectedArea = new List<int>();
                 for (var i = 0; i < Height; i++)
                 {

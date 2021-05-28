@@ -1,12 +1,11 @@
 ﻿using PoissonBlending.Lib.PixelDescription;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib.Solver
 {
     public delegate void OnProgressHandler(string colorComponentName, int iteration, double error, long? elapsedMs);
 
-    interface ISolver
+    public interface ISolver
     {
         event OnProgressHandler OnProgress;
 
