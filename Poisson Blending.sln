@@ -3,9 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoissonBlending.Lib", "PoissonBlending.Lib\PoissonBlending.Lib.csproj", "{7DB7AA50-33DB-46C6-AEF6-662D582737A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PoissonBlending.Lib", "PoissonBlending.Lib\PoissonBlending.Lib.csproj", "{7DB7AA50-33DB-46C6-AEF6-662D582737A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoissonBlending.ConsoleApp", "PoissonBlending.ConsoleApp\PoissonBlending.ConsoleApp.csproj", "{AEFD9662-7A6B-4A09-B52D-47219F04607D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PoissonBlending.ConsoleApp", "PoissonBlending.ConsoleApp\PoissonBlending.ConsoleApp.csproj", "{AEFD9662-7A6B-4A09-B52D-47219F04607D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DEAEDC8C-BE2F-4919-B1AC-6DA4CDFA44A7}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -5,6 +5,8 @@ namespace PoissonBlending.Lib.PixelDescription
 {
     public interface IPixel
     {
+        double Norm { get; }
+
         double this[string colorComponentName] { get; set; }
 
         BasePixel FromColor(Color color);
@@ -14,6 +16,8 @@ namespace PoissonBlending.Lib.PixelDescription
         List<string> GetColorComponentsNames();
 
         BasePixel Multiply(int value);
+
+        BasePixel Multiply(double value);
 
         BasePixel Add(IPixel value);
 

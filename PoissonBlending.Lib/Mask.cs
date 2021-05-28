@@ -115,7 +115,7 @@ namespace PoissonBlending.Lib
                 }
             }
 
-            List<(int x, int y)> pixelsMap = new();
+            var pixelsMap = new List<(int x, int y)>();
             for (var i = 0; i < Height; i++)
             {
                 for (var j = 0; j < Width; j++)

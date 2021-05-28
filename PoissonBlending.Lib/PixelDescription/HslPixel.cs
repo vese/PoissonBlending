@@ -13,6 +13,8 @@ namespace PoissonBlending.Lib.PixelDescription
         public double S { get; set; }
         public double L { get; set; }
 
+        public override double Norm => throw new NotImplementedException();
+
         public HslPixel()
         {
             H = S = L = 0;
@@ -72,6 +74,15 @@ namespace PoissonBlending.Lib.PixelDescription
         public override List<string> GetColorComponentsNames() => ColorComponentsNames;
 
         public override HslPixel Multiply(int value)
+        {
+            foreach(var colorComponentsName in ColorComponentsNames)
+            {
+                this[colorComponentsName] *= value;
+            }
+            return this;
+        }
+
+        public override HslPixel Multiply(double value)
         {
             foreach(var colorComponentsName in ColorComponentsNames)
             {

@@ -13,6 +13,8 @@ namespace PoissonBlending.Lib.PixelDescription
         public double M { get; set; }
         public double Y { get; set; }
 
+        public override double Norm => throw new NotImplementedException();
+
         public CmyPixel()
         {
             C = M = Y = 0;
@@ -72,6 +74,15 @@ namespace PoissonBlending.Lib.PixelDescription
         public override List<string> GetColorComponentsNames() => ColorComponentsNames;
 
         public override CmyPixel Multiply(int value)
+        {
+            foreach (var colorComponentsName in ColorComponentsNames)
+            {
+                this[colorComponentsName] *= value;
+            }
+            return this;
+        }
+
+        public override CmyPixel Multiply(double value)
         {
             foreach (var colorComponentsName in ColorComponentsNames)
             {

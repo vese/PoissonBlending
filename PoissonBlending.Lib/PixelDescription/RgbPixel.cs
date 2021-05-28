@@ -12,6 +12,8 @@ namespace PoissonBlending.Lib.PixelDescription
         public int G { get; set; }
         public int B { get; set; }
 
+        public override double Norm => Math.Sqrt(Math.Pow(R,2) + Math.Pow(G, 2) + Math.Pow(B, 2));
+
         public RgbPixel()
         {
             R = G = B = 0;
@@ -65,6 +67,15 @@ namespace PoissonBlending.Lib.PixelDescription
         public override List<string> GetColorComponentsNames() => ColorComponentsNames;
 
         public override RgbPixel Multiply(int value)
+        {
+            foreach (var colorComponentsName in ColorComponentsNames)
+            {
+                this[colorComponentsName] *= value;
+            }
+            return this;
+        }
+
+        public override RgbPixel Multiply(double value)
         {
             foreach (var colorComponentsName in ColorComponentsNames)
             {
