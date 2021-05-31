@@ -30,7 +30,7 @@ namespace PoissonBlending.Lib
                     {
                         var x = j + mask.OffsetX;
                         var y = i + mask.OffsetY;
-                        imageA.SetPixel(options.InsertPosition.x + x, options.InsertPosition.y + y, imageB.GetPixel(x, y));
+                        imageA.SetPixel(options.InsertPosition.X + x, options.InsertPosition.Y + y, imageB.GetPixel(x, y));
                     }
                 }
             }
@@ -107,14 +107,14 @@ namespace PoissonBlending.Lib
         {
             AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
 
-            AddBorderColors(imageA, options.InsertPosition.x, options.InsertPosition.y, mask);
+            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
 
             var solvedPixels = options.GetSolver().Solve(mask);
 
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                imageA.SetPixel(options.InsertPosition.x + x + mask.OffsetX, options.InsertPosition.y + y + mask.OffsetY, solvedPixels[i].ToColor());
+                imageA.SetPixel(options.InsertPosition.X + x + mask.OffsetX, options.InsertPosition.Y + y + mask.OffsetY, solvedPixels[i].ToColor());
             }
 
             return imageA;
@@ -132,14 +132,14 @@ namespace PoissonBlending.Lib
         {
             AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
 
-            AddBorderColors(imageA, options.InsertPosition.x, options.InsertPosition.y, mask);
+            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
 
             var solvedPixels = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
 
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                imageA.SetPixel(options.InsertPosition.x + x + mask.OffsetX, options.InsertPosition.y + y + mask.OffsetY, solvedPixels[i].ToColor());
+                imageA.SetPixel(options.InsertPosition.X + x + mask.OffsetX, options.InsertPosition.Y + y + mask.OffsetY, solvedPixels[i].ToColor());
             }
 
             return imageA;

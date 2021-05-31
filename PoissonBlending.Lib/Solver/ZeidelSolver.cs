@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace PoissonBlending.Lib.Solver
 {
-    public class JacobiSolver : BaseSolver
+    public class ZeidelSolver : BaseSolver
     {
-        public JacobiSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
+        public ZeidelSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
         protected override (double[] x, int iteration) SolveInternal(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError)
         {
@@ -17,11 +17,10 @@ namespace PoissonBlending.Lib.Solver
             int it = 0;
             while (!errorSuits)
             {
-                Array.Copy(pixels, nextX, n);
                 for (int i = 0; i < n; i++)
                 {
-                    neighbors[i].ForEach(neighbor => nextX[i] += x[neighbor]);
-                    nextX[i] /= 4;
+                    nextX[i] = pixels[i] / 4;
+                    neighbors[i].ForEach(neighbor => nextX[i] += nextX[neighbor] / 4);
                 }
 
                 var error = Errors.CalculateError(x, nextX);

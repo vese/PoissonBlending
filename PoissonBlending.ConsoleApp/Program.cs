@@ -9,22 +9,23 @@ namespace PoissonBlending.ConsoleApp
     {
         static async Task Main()
         {
-            PoissonBlendingSolver.ImposeWithoutBlending(new ImposeWithoutBlendingOptions()
-            {
-                BaseImageFilename = "A.jpg",
-                ImposingImageFilename = "B.jpg",
-                InsertPosition = new Point(300, 70),
-                ResultImageFilename = "rgbResultAsync points.jpg"
-            });
+            //PoissonBlendingSolver.ImposeWithoutBlending(new ImposeWithoutBlendingOptions()
+            //{
+            //    BaseImageFilename = "1\\A.jpg",
+            //    ImposingImageFilename = "1\\B.jpg",
+            //    InsertPosition = new Point(300, 70),
+            //    ResultImageFilename = "1\\res.jpg"
+            //});
 
             await PoissonBlendingSolver.ImposeAsync(new ImposeOptions()
             {
-                BaseImageFilename = "A.jpg",
-                ImposingImageFilename = "B.jpg",
+                BaseImageFilename = "1\\A.jpg",
+                ImposingImageFilename = "1\\B.jpg",
                 InsertPosition = new Point(300, 70),
-                ResultImageFilename = "rgbResultAsync points.jpg",
+                ResultImageFilename = "1\\rgb async.jpg",
                 LogProgressDelegate = (string message) => Console.WriteLine(message),
-                ShowIntermediateProgress = false
+                ShowIntermediateProgress = true,
+                //SolverType = SolverType.Zeidel
             });
 
 

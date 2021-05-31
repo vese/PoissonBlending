@@ -33,10 +33,10 @@ namespace PoissonBlending.Lib
         {
             if (selectedAreaPoints != null && selectedAreaPoints.Length >= 3)
             {
-                OffsetX = selectedAreaPoints.Min(p => p.x);
-                OffsetY = selectedAreaPoints.Min(p => p.y);
-                Width = selectedAreaPoints.Max(p => p.x) - OffsetX + 1;
-                Height = selectedAreaPoints.Max(p => p.y) - OffsetY + 1;
+                OffsetX = selectedAreaPoints.Min(p => p.X);
+                OffsetY = selectedAreaPoints.Min(p => p.Y);
+                Width = selectedAreaPoints.Max(p => p.X) - OffsetX + 1;
+                Height = selectedAreaPoints.Max(p => p.Y) - OffsetY + 1;
                 BorderMask = new bool[Height, Width];
                 FullMask = new bool[Height, Width];
                 BorderlessMask = new bool[Height, Width];
@@ -49,17 +49,17 @@ namespace PoissonBlending.Lib
                     var startPoint = i == 0 ? selectedAreaPoints[^1] : selectedAreaPoints[i - 1];
                     var endPoint = selectedAreaPoints[i];
                     var points = GetBresenhamLine(startPoint, endPoint);
-                    var isStartBorder = endPoint.y < startPoint.y;
+                    var isStartBorder = endPoint.Y < startPoint.Y;
                     points.ForEach(point =>
                     {
-                        FullMask[point.y - OffsetY, point.x - OffsetX] = BorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                        FullMask[point.Y - OffsetY, point.X - OffsetX] = BorderMask[point.Y - OffsetY, point.X - OffsetX] = true;
                         if (isStartBorder)
                         {
-                            startBorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                            startBorderMask[point.Y - OffsetY, point.X - OffsetX] = true;
                         }
                         else
                         {
-                            endBorderMask[point.y - OffsetY, point.x - OffsetX] = true;
+                            endBorderMask[point.Y - OffsetY, point.X - OffsetX] = true;
                         }
                     });
                 }
@@ -139,10 +139,10 @@ namespace PoissonBlending.Lib
 
         private static List<Point> GetBresenhamLine(Point p0, Point p1)
         {
-            int x0 = p0.x;
-            int y0 = p0.y;
-            int x1 = p1.x;
-            int y1 = p1.y;
+            int x0 = p0.X;
+            int y0 = p0.Y;
+            int x1 = p1.X;
+            int y1 = p1.Y;
             int dx = Math.Abs(x1 - x0);
             int dy = Math.Abs(y1 - y0);
 

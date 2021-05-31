@@ -2,6 +2,7 @@
 {
     public enum SolverType
     {
-        Jacobi
+        Jacobi,
+        Zeidel
     }
 }
