@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace PoissonBlending.Lib.Solver
 {
-    public class ZeidelSolver : BaseSolver
+    public class GaussSeidelSolver : BaseSolver
     {
-        public ZeidelSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
+        public GaussSeidelSolver(params OnProgressHandler[] onProgressHandlers) : base(onProgressHandlers) { }
 
         protected override (double[] x, int iteration) SolveInternal(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError)
         {

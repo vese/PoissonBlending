@@ -3,6 +3,6 @@
     public enum SolverType
     {
         Jacobi,
-        Zeidel
+        GaussSeidel
     }
 }

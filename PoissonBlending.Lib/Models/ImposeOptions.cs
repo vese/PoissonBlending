@@ -29,7 +29,7 @@ namespace PoissonBlending.Lib
                 _solver = SolverType switch
                 {
                     SolverType.Jacobi => new JacobiSolver(GetLogService().LogSolveProgress),
-                    SolverType.Zeidel => new ZeidelSolver(GetLogService().LogSolveProgress),
+                    SolverType.GaussSeidel => new GaussSeidelSolver(GetLogService().LogSolveProgress),
                     _ => throw new NotImplementedException(),
                 };
             }
