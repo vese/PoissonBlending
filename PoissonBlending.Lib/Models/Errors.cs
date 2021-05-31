@@ -23,6 +23,10 @@ namespace PoissonBlending.Lib
                 (GaussSeidelSolver, HslPixel) => JacobiHslError,
                 (GaussSeidelSolver, CmyPixel) => JacobiCmyError,
                 (GaussSeidelSolver, CmykPixel) => JacobiCmykError,
+                (SorSolver, RgbPixel) => 0.01,
+                (SorSolver, HslPixel) => JacobiHslError,
+                (SorSolver, CmyPixel) => JacobiCmyError,
+                (SorSolver, CmykPixel) => JacobiCmykError,
                 _ => throw new ArgumentException($"Unknown solver or color model")
             };
         }

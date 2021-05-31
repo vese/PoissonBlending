@@ -13,6 +13,8 @@ namespace PoissonBlending.Lib
         public SolverType SolverType { get; set; } = SolverType.Jacobi;
         public GuidanceFieldType GuidanceFieldType { get; set; } = GuidanceFieldType.Normal;
 
+        public double? SolverParam { get; set; }
+
         public ILogService GetLogService()
         {
             if (_logService == null)
@@ -30,6 +32,7 @@ namespace PoissonBlending.Lib
                 {
                     SolverType.Jacobi => new JacobiSolver(GetLogService().LogSolveProgress),
                     SolverType.GaussSeidel => new GaussSeidelSolver(GetLogService().LogSolveProgress),
+                    SolverType.Sor => new SorSolver(SolverParam, GetLogService().LogSolveProgress),
                     _ => throw new NotImplementedException(),
                 };
             }

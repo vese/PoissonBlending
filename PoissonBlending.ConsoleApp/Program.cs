@@ -22,10 +22,10 @@ namespace PoissonBlending.ConsoleApp
                 BaseImageFilename = "1\\A.jpg",
                 ImposingImageFilename = "1\\B.jpg",
                 InsertPosition = new Point(300, 70),
-                ResultImageFilename = "1\\rgb async.jpg",
+                ResultImageFilename = "1\\rgb async gauss-seidel.jpg",
                 LogProgressDelegate = (string message) => Console.WriteLine(message),
                 ShowIntermediateProgress = true,
-                //SolverType = SolverType.Zeidel
+                SolverType = SolverType.GaussSeidel
             });
 
 
