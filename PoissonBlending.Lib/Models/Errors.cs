@@ -15,18 +15,18 @@ namespace PoissonBlending.Lib
         {
             return (solver, colorModel) switch
             {
-                (JacobiSolver, RgbPixel) => JacobiRgbError,
-                (JacobiSolver, HslPixel) => JacobiHslError,
-                (JacobiSolver, CmyPixel) => JacobiCmyError,
-                (JacobiSolver, CmykPixel) => JacobiCmykError,
-                (GaussSeidelSolver, RgbPixel) => 0.01,
-                (GaussSeidelSolver, HslPixel) => JacobiHslError,
-                (GaussSeidelSolver, CmyPixel) => JacobiCmyError,
-                (GaussSeidelSolver, CmykPixel) => JacobiCmykError,
-                (SorSolver, RgbPixel) => 0.01,
-                (SorSolver, HslPixel) => JacobiHslError,
-                (SorSolver, CmyPixel) => JacobiCmyError,
-                (SorSolver, CmykPixel) => JacobiCmykError,
+                (JacobiSolver, RgbPixel) => 0.003,
+                (JacobiSolver, HslPixel) => 0.000001,
+                (JacobiSolver, CmyPixel) => 0.000001,
+                (JacobiSolver, CmykPixel) => 0.000001,
+                (GaussSeidelSolver, RgbPixel) => 0.003,
+                (GaussSeidelSolver, HslPixel) => 0.000001,
+                (GaussSeidelSolver, CmyPixel) => 0.000001,
+                (GaussSeidelSolver, CmykPixel) => 0.000001,
+                (SorSolver, RgbPixel) => 0.003,
+                (SorSolver, HslPixel) => 0.000001,
+                (SorSolver, CmyPixel) => 0.000001,
+                (SorSolver, CmykPixel) => 0.000001,
                 _ => throw new ArgumentException($"Unknown solver or color model")
             };
         }

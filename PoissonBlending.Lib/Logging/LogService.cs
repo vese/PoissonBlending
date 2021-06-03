@@ -52,14 +52,14 @@
         /// Логирование результата наложения.
         /// </summary>
         /// <param name="elapsedMs">Время выполнения в миллисекундах.</param>
-        public void LogProcessResult(long elapsedMs)
+        public void LogProcessResult(long elapsedMs, double similarityResult)
         {
             if (_logProgress == null)
             {
                 return;
             }
 
-            _logProgress($"Blending finished in {elapsedMs}ms.");
+            _logProgress($"Blending finished in {elapsedMs}ms. Similarity result {similarityResult:0.##}.");
             _logProgress("");
         }
     }

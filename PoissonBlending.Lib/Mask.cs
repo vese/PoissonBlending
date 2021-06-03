@@ -27,7 +27,7 @@ namespace PoissonBlending.Lib
         public PixelArray<Pixel> Pixels { get; set; }
 
         // Неизветсные соседние пиксели
-        public List<int>[] PixelsNeighboards { get; set; }
+        public List<int>[] PixelsNeighbors { get; set; }
 
         public Mask(Point[] selectedAreaPoints, int imageWidth, int imageHeight)
         {
@@ -127,11 +127,12 @@ namespace PoissonBlending.Lib
             }
             PixelsMap = pixelsMap.ToArray();
             Pixels = new(PixelsMap.Length);
-            PixelsNeighboards = new List<int>[PixelsMap.Length];
+            PixelsNeighbors = new List<int>[PixelsMap.Length];
             for (var i = 0; i < PixelsMap.Length; i++)
             {
                 (var x, var y) = PixelsMap[i];
-                PixelsNeighboards[i] = GetNeighbors(x, y).Where(p => BorderlessMask[p.y, p.x]).Select(p => Array.IndexOf(PixelsMap, p)).ToList();
+                PixelsNeighbors[i] = GetNeighbors(x, y).Where(p => p.y < BorderlessMask.GetLength(0) && BorderlessMask[p.y, p.x])
+                    .Select(p => Array.IndexOf(PixelsMap, p)).ToList();
             }
         }
 

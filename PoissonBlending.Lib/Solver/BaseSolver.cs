@@ -29,7 +29,7 @@ namespace PoissonBlending.Lib.Solver
             var colorComponentsValues = mask.Pixels.GetColorComponentsValues();
             var acceptedError = Errors.GetAcceptedError(this, new Pixel());
             var x = colorComponentsValues.Select(colorComponentValues =>
-                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighboards, acceptedError))
+                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError))
             );
             return new PixelArray<Pixel>(x);
         }
@@ -46,7 +46,7 @@ namespace PoissonBlending.Lib.Solver
             var acceptedError = Errors.GetAcceptedError(this, new Pixel());
             var tasks = colorComponentsValues.ToList().Select(colorComponentValues =>
                 new Task<KeyValuePair<string, double[]>>(() =>
-                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighboards, acceptedError))
+                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError))
                     )
                 ).ToList();
             tasks.ForEach(task => task.Start());

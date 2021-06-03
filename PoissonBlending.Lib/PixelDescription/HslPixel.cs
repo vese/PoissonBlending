@@ -13,7 +13,7 @@ namespace PoissonBlending.Lib.PixelDescription
         public double S { get; set; }
         public double L { get; set; }
 
-        public override double Norm => throw new NotImplementedException();
+        public override double Norm => Math.Sqrt(Math.Pow(H, 2) + Math.Pow(S, 2) + Math.Pow(L, 2));
 
         public HslPixel()
         {

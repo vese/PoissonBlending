@@ -14,7 +14,7 @@ namespace PoissonBlending.Lib.PixelDescription
         public double Y { get; set; }
         public double K { get; set; }
 
-        public override double Norm => throw new NotImplementedException();
+        public override double Norm => Math.Sqrt(Math.Pow(C, 2) + Math.Pow(M, 2) + Math.Pow(Y, 2) + Math.Pow(K, 2));
 
         public CmykPixel()
         {

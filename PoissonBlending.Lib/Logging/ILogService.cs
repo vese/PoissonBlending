@@ -20,6 +20,6 @@
         /// Логирование результата наложения.
         /// </summary>
         /// <param name="elapsedMs">Время выполнения в миллисекундах.</param>
-        void LogProcessResult(long elapsedMs);
+        void LogProcessResult(long elapsedMs, double similarityResult);
     }
 }

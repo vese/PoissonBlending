@@ -1,7 +1,4 @@
 ﻿using PoissonBlending.Lib.PixelDescription;
-using PoissonBlending.Lib.Solver;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -58,7 +55,13 @@ namespace PoissonBlending.Lib
 
             var mask = new Mask<Pixel>(options.SelectedAreaPoints, imageB.Width, imageB.Height);
 
-            var resultImage = CreateResultBitmap(options, imageA, imageB, mask);
+            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
+
+            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
+
+            var solvedPixels = options.GetSolver().Solve(mask);
+
+            var resultImage = CreateResultBitmap(options, imageA, mask, solvedPixels);
 
             if (options.SaveResultImage)
             {
@@ -66,7 +69,10 @@ namespace PoissonBlending.Lib
             }
 
             watch.Stop();
-            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
+
+            var similarityResult = ComputeSimilarityResult(options, imageA, imageB, mask, solvedPixels);
+
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds, similarityResult);
 
             return new Bitmap(resultImage);
         }
@@ -82,7 +88,13 @@ namespace PoissonBlending.Lib
 
             var mask = new Mask<Pixel>(options.SelectedAreaPoints, imageB.Width, imageB.Height);
 
-            var resultImage = await CreateResultBitmapAsync(options, imageA, imageB, mask).ConfigureAwait(false);
+            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
+
+            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
+
+            var solvedPixels = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
+
+            var resultImage = CreateResultBitmap(options, imageA, mask, solvedPixels);
 
             if (options.SaveResultImage)
             {
@@ -90,34 +102,60 @@ namespace PoissonBlending.Lib
             }
 
             watch.Stop();
-            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
+
+            var similarityResult = ComputeSimilarityResult(options, imageA, imageB, mask, solvedPixels);
+
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds, similarityResult);
 
             return new Bitmap(resultImage);
         }
 
-        /// <summary>
-        /// Составляет результирующее изображение.
-        /// </summary>
-        /// <param name="options">Параметры наложения.</param>
-        /// <param name="imageA">Базовое изображение.</param>
-        /// <param name="imageB">Накладываемое изображение.</param>
-        /// <param name="mask">Маска изображений.</param>
-        /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private static Bitmap CreateResultBitmap<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask) where Pixel : IPixel, new()
+        private static double ComputeSimilarityResult<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask, PixelArray<Pixel> solvedPixels) where Pixel : IPixel, new()
         {
-            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
-
-            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
-
-            var solvedPixels = options.GetSolver().Solve(mask);
-
+            var resultA = new Pixel();
+            var resultB = new Pixel();
+            var solvedResult = new Pixel();
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                imageA.SetPixel(options.InsertPosition.X + x + mask.OffsetX, options.InsertPosition.Y + y + mask.OffsetY, solvedPixels[i].ToColor());
+                solvedResult.Add(solvedPixels[i]);
+                resultB.Add(new Pixel().FromColor(imageB.GetPixel(mask.OffsetX, mask.OffsetY)));
             }
 
-            return imageA;
+            var multiplier = 1d / mask.Pixels.Length;
+            solvedResult.Multiply(multiplier);
+            resultB.Multiply(multiplier);
+
+            var count = 0;
+            for (int y = 0; y < mask.Height; y++)
+            {
+                for (int x = 0; x < mask.Width; x++)
+                {
+                    if (mask.BorderMask[y, x])
+                    {
+                        count++;
+                        var pixel = new Pixel().FromColor(imageA.GetPixel(options.InsertPosition.X + x + mask.OffsetX, options.InsertPosition.Y + y + mask.OffsetY));
+                        resultA.Add(pixel);
+                    }
+                }
+            }
+            multiplier = 1d / count;
+            resultA.Multiply(multiplier);
+            double result = 0;
+            var colorComponents = solvedResult.GetColorComponentsNames();
+            foreach (var colorComponent in colorComponents)
+            {
+                var t = (resultB[colorComponent] - resultA[colorComponent]);
+                if (t == 0)
+                {
+                    continue;
+                }
+                result += (solvedResult[colorComponent] - resultA[colorComponent]) / t - 0.5;
+
+            }
+            result *= 2 / colorComponents.Count;
+
+            return result;
         }
 
         /// <summary>
@@ -125,17 +163,10 @@ namespace PoissonBlending.Lib
         /// </summary>
         /// <param name="options">Параметры наложения.</param>
         /// <param name="imageA">Базовое изображение.</param>
-        /// <param name="imageB">Накладываемое изображение.</param>
         /// <param name="mask">Маска изображений.</param>
         /// <returns>Результирующее изображение <see cref="Bitmap"/>.</returns>
-        private static async Task<Bitmap> CreateResultBitmapAsync<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask) where Pixel : IPixel, new()
+        private static Bitmap CreateResultBitmap<Pixel>(ImposeOptions options, Bitmap imageA, Mask<Pixel> mask, PixelArray<Pixel> solvedPixels) where Pixel : IPixel, new()
         {
-            AddGuidanceFieldProjection(imageA, imageB, mask, options.GuidanceFieldType);
-
-            AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
-
-            var solvedPixels = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
-
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
