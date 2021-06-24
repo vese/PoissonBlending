@@ -1,4 +1,5 @@
 ﻿using PoissonBlending.Lib.PixelDescription;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PoissonBlending.Lib.Solver
@@ -15,7 +16,7 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        PixelArray<Pixel> Solve<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new();
+        (PixelArray<Pixel> result, Dictionary<string, long> times) Solve<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new();
 
         /// <summary>
         /// Решение системы уравнений.
@@ -23,6 +24,6 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        Task<PixelArray<Pixel>> SolveAsync<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new();
+        Task<(PixelArray<Pixel> result, Dictionary<string, long> times)> SolveAsync<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new();
     }
 }

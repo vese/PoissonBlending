@@ -6,11 +6,6 @@ namespace PoissonBlending.Lib
 {
     static class Errors
     {
-        public const double JacobiRgbError = 0.01;
-        public const double JacobiHslError = 0.00001;
-        public const double JacobiCmyError = 0.001;
-        public const double JacobiCmykError = 0.001;
-
         public static double GetAcceptedError(ISolver solver, IPixel colorModel)
         {
             return (solver, colorModel) switch

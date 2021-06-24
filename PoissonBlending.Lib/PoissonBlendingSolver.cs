@@ -1,4 +1,6 @@
-﻿using PoissonBlending.Lib.PixelDescription;
+﻿using PoissonBlending.Lib.Models;
+using PoissonBlending.Lib.PixelDescription;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -40,11 +42,11 @@ namespace PoissonBlending.Lib
             return new Bitmap(imageA);
         }
 
-        public static Bitmap Impose(ImposeOptions options) => Impose<RgbPixel>(options);
+        public static ImposeResult Impose(ImposeOptions options) => Impose<RgbPixel>(options);
 
-        public static async Task<Bitmap> ImposeAsync(ImposeOptions options) => await ImposeAsync<RgbPixel>(options).ConfigureAwait(false);
+        public static async Task<ImposeResult> ImposeAsync(ImposeOptions options) => await ImposeAsync<RgbPixel>(options).ConfigureAwait(false);
 
-        public static Bitmap Impose<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
+        public static ImposeResult Impose<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
         {
             options.GetLogService().LogStarted(typeof(Pixel).Name, false);
 
@@ -59,9 +61,9 @@ namespace PoissonBlending.Lib
 
             AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
 
-            var solvedPixels = options.GetSolver().Solve(mask);
+            var solveResult = options.GetSolver().Solve(mask);
 
-            var resultImage = CreateResultBitmap(options, imageA, mask, solvedPixels);
+            var resultImage = CreateResultBitmap(options, imageA, mask, solveResult.result);
 
             if (options.SaveResultImage)
             {
@@ -70,14 +72,24 @@ namespace PoissonBlending.Lib
 
             watch.Stop();
 
-            var similarityResult = ComputeSimilarityResult(options, imageA, imageB, mask, solvedPixels);
+            var averagePixels = ComputeAveragePixels(options, imageA, imageB, mask, solveResult.result);
 
-            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds, similarityResult);
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
 
-            return new Bitmap(resultImage);
+            return new ImposeResult()
+            {
+                Image = new Bitmap(resultImage),
+                ImposeTimeMilliseconds = watch.ElapsedMilliseconds,
+                ColorComponentSolveTimes = solveResult.times,
+                ChangeResult = (averagePixels.changeA, averagePixels.changeB),
+                AverageBorderPixelA = averagePixels.borderA,
+                AverageBorderPixelC = averagePixels.borderC,
+                AverageInternalPixelB = averagePixels.internalB,
+                AverageInternalPixelC = averagePixels.internalC
+            };
         }
 
-        public static async Task<Bitmap> ImposeAsync<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
+        public static async Task<ImposeResult> ImposeAsync<Pixel>(ImposeOptions options) where Pixel : IPixel, new()
         {
             options.GetLogService().LogStarted(typeof(Pixel).Name, true);
 
@@ -92,9 +104,9 @@ namespace PoissonBlending.Lib
 
             AddBorderColors(imageA, options.InsertPosition.X, options.InsertPosition.Y, mask);
 
-            var solvedPixels = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
+            var solveResult = await options.GetSolver().SolveAsync(mask).ConfigureAwait(false);
 
-            var resultImage = CreateResultBitmap(options, imageA, mask, solvedPixels);
+            var resultImage = CreateResultBitmap(options, imageA, mask, solveResult.result);
 
             if (options.SaveResultImage)
             {
@@ -103,35 +115,76 @@ namespace PoissonBlending.Lib
 
             watch.Stop();
 
-            var similarityResult = ComputeSimilarityResult(options, imageA, imageB, mask, solvedPixels);
+            var averagePixels = ComputeAveragePixels(options, imageA, imageB, mask, solveResult.result);
 
-            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds, similarityResult);
+            options.GetLogService().LogProcessResult(watch.ElapsedMilliseconds);
 
-            return new Bitmap(resultImage);
+            return new ImposeResult()
+            {
+                Image = new Bitmap(resultImage),
+                ImposeTimeMilliseconds = watch.ElapsedMilliseconds,
+                ColorComponentSolveTimes = solveResult.times,
+                ChangeResult = (averagePixels.changeA, averagePixels.changeB),
+                AverageBorderPixelA = averagePixels.borderA,
+                AverageBorderPixelC = averagePixels.borderC,
+                AverageInternalPixelB = averagePixels.internalB,
+                AverageInternalPixelC = averagePixels.internalC
+            };
         }
 
-        private static double ComputeSimilarityResult<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask, PixelArray<Pixel> solvedPixels) where Pixel : IPixel, new()
+        private static List<(int x, int y)> GetNearPixels<Pixel>(int x, int y, int radius) where Pixel : IPixel, new()
         {
+            var neigbors = Mask<Pixel>.GetNeighbors(x, y);
+            for (int i = 0; i < radius - 1; i++)
+            {
+                neigbors = neigbors.SelectMany(p => Mask<Pixel>.GetNeighbors(x, y)).ToList();
+            }
+            return neigbors.Distinct().ToList();
+        }
+
+        private static (double changeA, double changeB, Dictionary<string, double> borderA, Dictionary<string, double> borderC, 
+            Dictionary<string, double> internalB, Dictionary<string, double> internalC)
+            ComputeAveragePixels<Pixel>(ImposeOptions options, Bitmap imageA, Bitmap imageB, Mask<Pixel> mask, 
+            PixelArray<Pixel> solvedPixels) where Pixel : IPixel, new()
+        {
+            int radius = 3;
+
             var resultA = new Pixel();
             var resultB = new Pixel();
             var solvedResult = new Pixel();
+            var solvedResultInternal = new Pixel();
+            var count = 0;
+            var countInternal = 0;
             for (var i = 0; i < mask.Pixels.Length; i++)
             {
                 (var x, var y) = mask.PixelsMap[i];
-                solvedResult.Add(solvedPixels[i]);
-                resultB.Add(new Pixel().FromColor(imageB.GetPixel(mask.OffsetX, mask.OffsetY)));
+                if (mask.BorderMask[y, x] || GetNearPixels<Pixel>(x, y, radius).Where(p => p.x > 0 && p.x < mask.Width && p.y > 0 && p.y < mask.Height).Any(p => mask.BorderMask[p.y, p.x]))
+                {
+                    count++;
+                    solvedResult.Add(solvedPixels[i]);
+                    //resultB.Add(new Pixel().FromColor(imageB.GetPixel(x + mask.OffsetX, y + mask.OffsetY)));
+                }
+                else if (mask.BorderlessMask[y, x])
+                {
+                    countInternal++;
+                    solvedResultInternal.Add(solvedPixels[i]);
+                    resultB.Add(new Pixel().FromColor(imageB.GetPixel(x + mask.OffsetX, y + mask.OffsetY)));
+                }
             }
 
-            var multiplier = 1d / mask.Pixels.Length;
+            var multiplier = 1d / count;
             solvedResult.Multiply(multiplier);
+
+            multiplier = 1d / countInternal;
+            solvedResultInternal.Multiply(multiplier);
             resultB.Multiply(multiplier);
 
-            var count = 0;
+            count = 0;
             for (int y = 0; y < mask.Height; y++)
             {
                 for (int x = 0; x < mask.Width; x++)
                 {
-                    if (mask.BorderMask[y, x])
+                    if (mask.BorderMask[y, x] || GetNearPixels<Pixel>(x, y, radius).Where(p => p.x > 0 && p.x < mask.Width && p.y > 0 && p.y < mask.Height).Any(p => mask.BorderMask[p.y, p.x]))
                     {
                         count++;
                         var pixel = new Pixel().FromColor(imageA.GetPixel(options.InsertPosition.X + x + mask.OffsetX, options.InsertPosition.Y + y + mask.OffsetY));
@@ -139,23 +192,36 @@ namespace PoissonBlending.Lib
                     }
                 }
             }
+
             multiplier = 1d / count;
             resultA.Multiply(multiplier);
-            double result = 0;
+
+            double changeA = 0;
+            double changeB = 0;
             var colorComponents = solvedResult.GetColorComponentsNames();
+            double maxValue = new Pixel() switch
+            {
+                RgbPixel => 255,
+                _ => 1
+            };
+            var averageBorderPixelA = new Dictionary<string, double>();
+            var averageBorderPixelC = new Dictionary<string, double>();
+            var averageInternalPixelB = new Dictionary<string, double>();
+            var averageInternalPixelC = new Dictionary<string, double>();
             foreach (var colorComponent in colorComponents)
             {
-                var t = (resultB[colorComponent] - resultA[colorComponent]);
-                if (t == 0)
-                {
-                    continue;
-                }
-                result += (solvedResult[colorComponent] - resultA[colorComponent]) / t - 0.5;
+                changeA += (solvedResult[colorComponent] - resultA[colorComponent]) / maxValue;
+                changeB += (solvedResultInternal[colorComponent] - resultB[colorComponent]) / maxValue;
 
+                averageBorderPixelA.Add(colorComponent, resultA[colorComponent]);
+                averageBorderPixelC.Add(colorComponent, solvedResult[colorComponent]);
+                averageInternalPixelB.Add(colorComponent, resultB[colorComponent]);
+                averageInternalPixelC.Add(colorComponent, solvedResultInternal[colorComponent]);
             }
-            result *= 2 / colorComponents.Count;
+            changeA /= colorComponents.Count;
+            changeB /= colorComponents.Count;
 
-            return result;
+            return (changeA, changeB, averageBorderPixelA, averageBorderPixelC, averageInternalPixelB, averageInternalPixelC);
         }
 
         /// <summary>

@@ -24,14 +24,19 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        public PixelArray<Pixel> Solve<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new()
+        public (PixelArray<Pixel> result, Dictionary<string, long> times) Solve<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             var colorComponentsValues = mask.Pixels.GetColorComponentsValues();
             var acceptedError = Errors.GetAcceptedError(this, new Pixel());
-            var x = colorComponentsValues.Select(colorComponentValues =>
-                new KeyValuePair<string, double[]>(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError))
-            );
-            return new PixelArray<Pixel>(x);
+            var x = new List<KeyValuePair<string, double[]>>();
+            var times = new Dictionary<string, long>();
+            foreach (var colorComponentValues in colorComponentsValues)
+            {
+                var result = Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError);
+                x.Add(new KeyValuePair<string, double[]>(colorComponentValues.Key, result.x));
+                times.Add(colorComponentValues.Key, result.time);
+            }
+            return (new PixelArray<Pixel>(x), times);
         }
 
         /// <summary>
@@ -40,21 +45,28 @@ namespace PoissonBlending.Lib.Solver
         /// <param name="pixels">Массив пикселей.</param>
         /// <param name="neighbors">Массив списков идентификаторов соседних пикселей.</param>
         /// <returns>Вычисленный массив пикселей.</returns>
-        public async Task<PixelArray<Pixel>> SolveAsync<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new()
+        public async Task<(PixelArray<Pixel> result, Dictionary<string, long> times)> SolveAsync<Pixel>(Mask<Pixel> mask) where Pixel : IPixel, new()
         {
             var colorComponentsValues = mask.Pixels.GetColorComponentsValues();
             var acceptedError = Errors.GetAcceptedError(this, new Pixel());
-            var tasks = colorComponentsValues.ToList().Select(colorComponentValues =>
-                new Task<KeyValuePair<string, double[]>>(() =>
-                    new(colorComponentValues.Key, Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError))
-                    )
-                ).ToList();
+            var tasks = colorComponentsValues
+                .Select(colorComponentValues => 
+                    new Task<(double[] x, long time)>(() => Solve(colorComponentValues.Key, colorComponentValues.Value, mask.PixelsNeighbors, acceptedError)))
+                .ToList();
             tasks.ForEach(task => task.Start());
-            var x = await Task.WhenAll(tasks).ConfigureAwait(false);
-            return new PixelArray<Pixel>(x);
+            var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+            var x = new List<KeyValuePair<string, double[]>>();
+            var times = new Dictionary<string, long>();
+            var colorComponentsValuesList = colorComponentsValues.ToList();
+            for (int i = 0; i < colorComponentsValuesList.Count; i++)
+            {
+                x.Add(new KeyValuePair<string, double[]>(colorComponentsValuesList[i].Key, results[i].x));
+                times.Add(colorComponentsValuesList[i].Key, results[i].time);
+            }
+            return (new PixelArray<Pixel>(x), times);
         }
 
-        protected double[] Solve(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError)
+        protected (double[] x, long time) Solve(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError)
         {
             var watch = Stopwatch.StartNew();
 
@@ -63,7 +75,7 @@ namespace PoissonBlending.Lib.Solver
             watch.Stop();
             ReportProgress(colorComponentName, it, 0, watch.ElapsedMilliseconds);
 
-            return x;
+            return (x, watch.ElapsedMilliseconds);
         }
 
         protected abstract (double[] x, int iteration) SolveInternal(string colorComponentName, double[] pixels, List<int>[] neighbors, double acceptedError);
